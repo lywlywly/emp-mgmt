@@ -1,0 +1,27 @@
+{
+  "name": "emp-mgmt-backend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --env-file=.env --watch --import tsx src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trpc/server": "^11",
+    "express": "^4",
+    "express-session": "^1",
+    "mongoose": "^8",
+    "multer": "^2",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/express": "^4",
+    "@types/express-session": "^1",
+    "@types/multer": "^1",
+    "@types/node": "^22",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}
