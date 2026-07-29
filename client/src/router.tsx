@@ -1,15 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
+import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router";
 
 import AppLayout from "@/layouts/AppLayout";
-import EmployeeOnboarding from "@/pages/EmployeeOnboarding";
-import EmployeeProfile from "@/pages/EmployeeProfile";
-import EmployeeVisaStatus from "@/pages/EmployeeVisaStatus";
-import HrDashboard from "@/pages/HrDashboard";
-import HrHiringManagement from "@/pages/HrHiringManagement";
-import { useMockSession } from "@/lib/mock-session";
+import { authMeQueryOptions } from "@/lib/trpc";
+
+const EmployeeOnboarding = lazy(() => import("@/pages/EmployeeOnboarding"));
+const EmployeeProfile = lazy(() => import("@/pages/EmployeeProfile"));
+const EmployeeVisaStatus = lazy(() => import("@/pages/EmployeeVisaStatus"));
+const HrDashboard = lazy(() => import("@/pages/HrDashboard"));
+const HrHiringManagement = lazy(() => import("@/pages/HrHiringManagement"));
 
 export function AppRoutes() {
-  const { data: session, isError, isPending } = useMockSession();
+  const { data: session, isError, isPending } = useQuery(authMeQueryOptions());
 
   if (isPending) {
     return (

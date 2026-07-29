@@ -7,6 +7,22 @@ Currently, two official plugins are available:
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
+## shadcn component customizations
+
+The files in `src/components/ui` are generated shadcn source code. The
+following hover styles are intentional local customizations and should be
+preserved when merging a shadcn CLI update.
+
+| Component         | Local change                                                                                                                                                                                                          | Visual result                                                                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `input.tsx`       | Added `enabled:hover:border-ring enabled:hover:bg-muted/30` to `Input`.                                                                                                                                               | Enabled inputs gain a subtle ring-colored border and muted surface on hover.                                                                                    |
+| `select.tsx`      | Added `enabled:hover:border-ring enabled:hover:bg-muted/30` to `SelectTrigger`, changed the built-in dark-mode hover selector to `dark:enabled:hover:bg-input/50`, and added `overscroll-contain` to `SelectContent`. | Enabled select triggers receive the same hover feedback as inputs; disabled triggers do not receive a hover surface; menu scrolling does not chain to the page. |
+| `radio-group.tsx` | Added `hover:border-primary/60 hover:bg-primary/5` to `RadioGroupItem`.                                                                                                                                               | Unselected radio controls receive a soft primary-tinted hover cue; the selected primary fill remains the dominant state.                                        |
+
+The shadcn registry diff also currently reports `"use client"` directive and
+quote-formatting differences for `radio-group.tsx` and `select.tsx`. Those are
+upstream template differences, not intentional local customizations.
+
 ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).

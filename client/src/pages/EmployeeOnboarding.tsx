@@ -1,68 +1,71 @@
-import { useMockSession } from "@/lib/mock-session";
+import { useQuery } from "@tanstack/react-query";
+
+import { OnboardingForm } from "@/features/onboarding/OnboardingForm";
+import { SubmittedOnboarding } from "@/features/onboarding/SubmittedOnboarding";
+import { authMeQueryOptions, trpc } from "@/lib/trpc";
 
 export default function EmployeeOnboarding() {
-  const { data: session } = useMockSession();
+  const { data: session } = useQuery(authMeQueryOptions());
+  const applicationQuery = useQuery(
+    trpc.onboarding.getMine.queryOptions(undefined, {
+      enabled: session?.onboardingStatus === "pending",
+    }),
+  );
 
-  if (!session) {
+  if (!session || session.onboardingStatus === "approved") {
     return null;
   }
 
-  const { onboardingStatus } = session;
-
-  if (onboardingStatus === "approved") {
-    return null;
+  if (session.onboardingStatus === "pending") {
+    return (
+      <section className="max-w-2xl space-y-6">
+        <p className="text-sm font-medium text-primary">Employee portal</p>
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">
+            Onboarding application
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Your application is waiting for HR review.
+          </p>
+        </div>
+        {applicationQuery.data ? (
+          <SubmittedOnboarding application={applicationQuery.data} />
+        ) : applicationQuery.isError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {applicationQuery.error.message}
+          </p>
+        ) : (
+          <div className="h-96 animate-pulse rounded-lg border bg-muted/40" />
+        )}
+      </section>
+    );
   }
 
-  const content = {
-    not_started: {
-      status: "Action required",
-      description:
-        "Complete your personal information and upload the documents needed for employment and work authorization.",
-      heading: "Start your application",
-      detail:
-        "The onboarding form will collect your contact details, work authorization, emergency contacts, and required documents.",
-      action: "Start application",
-    },
-    pending: {
-      status: "Pending review",
-      description:
-        "Your application has been submitted and is waiting for HR review.",
-      heading: "Application submitted",
-      detail:
-        "You will be able to view your submitted information and uploaded documents here. Editing, profile access, and visa tasks unlock after HR approves your application.",
-      action: "View submitted application",
-    },
-    rejected: {
-      status: "Changes required",
-      description:
-        "HR has requested updates to your onboarding application before it can be approved.",
-      heading: "Review feedback and resubmit",
-      detail:
-        "HR feedback will appear here with the sections that need changes. After updating your application, you can submit it for another review.",
-      action: "Review application",
-    },
-  }[onboardingStatus];
+  const isRejected = session.onboardingStatus === "rejected";
 
   return (
     <section className="max-w-2xl space-y-6">
       <p className="text-sm font-medium text-primary">Employee portal</p>
-      <h1 className="text-4xl font-bold tracking-tight">
-        Onboarding application
-      </h1>
-      <p className="text-lg text-muted-foreground">{content.description}</p>
-      <div className="rounded-lg border bg-card p-6 text-card-foreground">
-        <p className="text-sm font-medium text-primary">
-          Status: {content.status}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">
+          Onboarding application
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Complete your information and supporting documents for HR review.
         </p>
-        <h2 className="mt-2 font-semibold">{content.heading}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{content.detail}</p>
-        <button
-          className="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          type="button"
-        >
-          {content.action}
-        </button>
       </div>
+      {isRejected && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-sm font-medium text-destructive">
+            Changes required
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Please confirm your work-authorization information and upload the
+            required document before resubmitting.
+          </p>
+        </div>
+      )}
+      <OnboardingForm isRejected={isRejected} />
     </section>
   );
 }

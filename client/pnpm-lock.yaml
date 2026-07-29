@@ -13,6 +13,9 @@ importers:
       "@fontsource-variable/inter":
         specifier: ^5.3.0
         version: 5.3.0
+      "@hookform/resolvers":
+        specifier: ^5.5.7
+        version: 5.5.7(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(react-hook-form@7.83.0(react@19.2.8))(zod@3.25.76)
       "@tailwindcss/vite":
         specifier: ^4.3.3
         version: 4.3.3(vite@8.1.5(@types/node@24.13.3)(jiti@2.7.0))
@@ -40,6 +43,12 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.8(react@19.2.8)
+      react-hook-form:
+        specifier: ^7.83.0
+        version: 7.83.0(react@19.2.8)
+      react-image-crop:
+        specifier: ^11.1.2
+        version: 11.1.2(react@19.2.8)
       react-router:
         specifier: ^8.3.0
         version: 8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -55,6 +64,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       "@eslint/js":
         specifier: ^10.0.1
@@ -62,6 +74,9 @@ importers:
       "@tanstack/eslint-plugin-query":
         specifier: ^5.101.4
         version: 5.101.4(eslint@10.8.0(jiti@2.7.0))(typescript@6.0.3)
+      "@trpc/server":
+        specifier: ^11.18.0
+        version: 11.18.0(typescript@6.0.3)
       "@types/node":
         specifier: ^24.13.2
         version: 24.13.3
@@ -489,6 +504,87 @@ packages:
     peerDependencies:
       hono: ^4
 
+  "@hookform/resolvers@5.5.7":
+    resolution:
+      {
+        integrity: sha512-CyPCYV8/KlXfEXLWj8HHHhVsR/IZ6Ckm3b/a4fWtO/lRnRK1huqncb8LlAWrmpPRsse5glF5aVuDRMHEr3UGag==,
+      }
+    peerDependencies:
+      "@sinclair/typebox": ">=0.25.24"
+      "@standard-schema/spec": ^1.0.0
+      "@typeschema/main": ">=0.13.7"
+      "@vinejs/vine": ^2.0.0 || ^3.0.0
+      ajv: ^8.12.0
+      ajv-errors: ^3.0.0
+      ajv-formats: ^2.1.1
+      arktype: ^2.0.0
+      ata-validator: ^0.7.0
+      class-transformer: ">=0.4.0"
+      class-validator: ">=0.12.0"
+      computed-types: ^1.0.0
+      effect: ^3.10.3
+      fluentvalidation-ts: ^3.0.0
+      fp-ts: ^2.7.0
+      io-ts: ^2.0.0
+      joi: ^17.0.0
+      nope-validator: ">=0.12.0"
+      react-hook-form: ^7.55.0
+      superstruct: ">=0.12.0"
+      typanion: ^3.3.2
+      valibot: ">=0.31.0 || ^1.0.0-beta.4 || ^1.0.0-rc"
+      vest: ">=3.0.0"
+      yup: ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      "@sinclair/typebox":
+        optional: true
+      "@standard-schema/spec":
+        optional: true
+      "@typeschema/main":
+        optional: true
+      "@vinejs/vine":
+        optional: true
+      ajv:
+        optional: true
+      ajv-errors:
+        optional: true
+      ajv-formats:
+        optional: true
+      arktype:
+        optional: true
+      ata-validator:
+        optional: true
+      class-transformer:
+        optional: true
+      class-validator:
+        optional: true
+      computed-types:
+        optional: true
+      effect:
+        optional: true
+      fluentvalidation-ts:
+        optional: true
+      fp-ts:
+        optional: true
+      io-ts:
+        optional: true
+      joi:
+        optional: true
+      nope-validator:
+        optional: true
+      superstruct:
+        optional: true
+      typanion:
+        optional: true
+      valibot:
+        optional: true
+      vest:
+        optional: true
+      yup:
+        optional: true
+      zod:
+        optional: true
+
   "@humanfs/core@0.19.2":
     resolution:
       {
@@ -762,6 +858,12 @@ packages:
         integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==,
       }
     engines: { node: ">=18" }
+
+  "@standard-schema/utils@0.3.0":
+    resolution:
+      {
+        integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==,
+      }
 
   "@tailwindcss/node@4.3.3":
     resolution:
@@ -3127,6 +3229,23 @@ packages:
     peerDependencies:
       react: ^19.2.8
 
+  react-hook-form@7.83.0:
+    resolution:
+      {
+        integrity: sha512-AXt8cMCmx5a7u4uvpb2uRFVrWQhllI4pV+LSykxIac/hjt44TnQkmX9BKuQi2i+LDC62esmiLpilkav+kjVf/A==,
+      }
+    engines: { node: ">=18.0.0" }
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+
+  react-image-crop@11.1.2:
+    resolution:
+      {
+        integrity: sha512-+0Pc2fxpwKL4u4oLmdKBw8XSwUceFbXbKEHvFOlsl/MGB1OVNic4uBlAPmEHGXYgoJIq+b63xHbc/aJMG0AVkA==,
+      }
+    peerDependencies:
+      react: ">=16.13.1"
+
   react-router@8.3.0:
     resolution:
       {
@@ -4051,6 +4170,15 @@ snapshots:
     dependencies:
       hono: 4.12.32
 
+  "@hookform/resolvers@5.5.7(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(react-hook-form@7.83.0(react@19.2.8))(zod@3.25.76)":
+    dependencies:
+      "@standard-schema/utils": 0.3.0
+      react-hook-form: 7.83.0(react@19.2.8)
+    optionalDependencies:
+      ajv: 8.20.0
+      ajv-formats: 2.1.1(ajv@8.20.0)
+      zod: 3.25.76
+
   "@humanfs/core@0.19.2":
     dependencies:
       "@humanfs/types": 0.15.0
@@ -4183,6 +4311,8 @@ snapshots:
   "@sec-ant/readable-stream@0.4.1": {}
 
   "@sindresorhus/merge-streams@4.0.0": {}
+
+  "@standard-schema/utils@0.3.0": {}
 
   "@tailwindcss/node@4.3.3":
     dependencies:
@@ -5441,6 +5571,14 @@ snapshots:
     dependencies:
       react: 19.2.8
       scheduler: 0.27.0
+
+  react-hook-form@7.83.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+
+  react-image-crop@11.1.2(react@19.2.8):
+    dependencies:
+      react: 19.2.8
 
   react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
