@@ -10,17 +10,21 @@
   },
   "dependencies": {
     "@trpc/server": "^11",
+    "bcrypt": "^6.0.0",
     "express": "^4",
     "express-session": "^1",
     "mongoose": "^8",
     "multer": "^2",
+    "nodemailer": "^9.0.3",
     "zod": "^3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^4",
     "@types/express-session": "^1",
     "@types/multer": "^1",
     "@types/node": "^22",
+    "@types/nodemailer": "^8.0.1",
     "tsx": "^4",
     "typescript": "^5"
   }

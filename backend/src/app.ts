@@ -9,7 +9,10 @@ import { errorHandler } from "./middleware/error";
 export function createApp() {
   const app = express();
 
-  app.use(express.json());
+  // NOTE: no global express.json(). The tRPC Express adapter parses its own
+  // request body, and Multer handles multipart uploads — a global JSON parser
+  // would consume the stream first and break tRPC mutations. Add express.json()
+  // per-route only if a plain Express JSON route needs it later.
 
   // express-session: HTTP-only cookie.
   app.use(
