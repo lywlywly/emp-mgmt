@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Suspense } from "react";
 
-import { useMockSession } from "@/lib/mock-session";
+import { authMeQueryOptions } from "@/lib/trpc";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-2 text-sm transition-colors ${
@@ -10,7 +12,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 function AppLayout() {
-  const { data: session } = useMockSession();
+  const { data: session } = useQuery(authMeQueryOptions());
 
   if (!session) {
     return null;
@@ -71,7 +73,21 @@ function AppLayout() {
         </nav>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-16">
-        <Outlet />
+        <Suspense
+          fallback={
+            <section className="max-w-2xl animate-pulse space-y-6">
+              <div className="h-4 w-28 rounded bg-muted" />
+              <div className="h-10 w-80 max-w-full rounded bg-muted" />
+              <div className="space-y-2">
+                <div className="h-5 w-full rounded bg-muted" />
+                <div className="h-5 w-3/4 rounded bg-muted" />
+              </div>
+              <div className="h-64 rounded-lg border bg-card" />
+            </section>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
