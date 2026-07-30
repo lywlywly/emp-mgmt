@@ -84,3 +84,53 @@ export type OnboardingApplication = {
   submittedAt: string | null;
   data: OnboardingFormData;
 };
+
+export type OptDocumentKind = "opt_receipt" | "opt_ead" | "i_983" | "i_20";
+
+export type OptDocumentStatus =
+  "not_started" | "pending" | "approved" | "rejected";
+
+export type OptDocumentFile = {
+  fileName: string;
+  mimeType: string;
+  size: number;
+};
+
+export type OptDocument = {
+  kind: OptDocumentKind;
+  status: OptDocumentStatus;
+  feedback: string | null;
+  file: OptDocumentFile | null;
+};
+
+export type OptNextAction = {
+  type: "upload" | "wait_for_hr" | "complete";
+  document: OptDocumentKind | null;
+  message: string;
+};
+
+export type OptWorkflow = {
+  applies: boolean;
+  documents: OptDocument[];
+  nextAction: OptNextAction;
+};
+
+export type OptDocumentSubmission = OptDocumentFile & {
+  kind: OptDocumentKind;
+};
+
+export type HrOnboardingApplication = OnboardingApplication & {
+  employeeId: string;
+  employeeName: string;
+};
+
+export type HrOnboardingApplicationSummary = Pick<
+  HrOnboardingApplication,
+  "id" | "employeeId" | "employeeName" | "status" | "submittedAt"
+>;
+
+export type HrOptEmployee = {
+  employeeId: string;
+  employeeName: string;
+  workflow: OptWorkflow;
+};

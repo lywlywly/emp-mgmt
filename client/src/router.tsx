@@ -10,6 +10,7 @@ const EmployeeProfile = lazy(() => import("@/pages/EmployeeProfile"));
 const EmployeeVisaStatus = lazy(() => import("@/pages/EmployeeVisaStatus"));
 const HrDashboard = lazy(() => import("@/pages/HrDashboard"));
 const HrHiringManagement = lazy(() => import("@/pages/HrHiringManagement"));
+const HrVisaStatus = lazy(() => import("@/pages/HrVisaStatus"));
 
 export function AppRoutes() {
   const { data: session, isError, isPending } = useQuery(authMeQueryOptions());
@@ -77,6 +78,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/hr" element={<HrDashboard />} />
           <Route path="/hr/hiring" element={<HrHiringManagement />} />
+          <Route path="/hr/visa-status" element={<HrVisaStatus />} />
           <Route path="*" element={<Navigate replace to="/hr" />} />
         </Route>
       </Routes>
