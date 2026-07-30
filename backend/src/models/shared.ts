@@ -73,3 +73,16 @@ export const personalInfoFields = {
   },
   documents: { type: documentsSchema },
 };
+
+// Keys of the shared personal-info block (used to copy an approved application
+// into an EmployeeProfile, and elsewhere).
+export const PERSONAL_INFO_KEYS = Object.keys(personalInfoFields) as (keyof typeof personalInfoFields)[];
+
+// Pick just the personal-info fields from a plain object (e.g. application.toObject()).
+export function pickPersonalInfo(src: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of PERSONAL_INFO_KEYS) {
+    if (src[key] !== undefined) out[key] = src[key];
+  }
+  return out;
+}
