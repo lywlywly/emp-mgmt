@@ -3,16 +3,15 @@ import session from "express-session";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
-import { uploadRouter } from "./routes/upload";
+import { filesRouter } from "./routes/files";
 import { errorHandler } from "./middleware/error";
 
 export function createApp() {
   const app = express();
 
-  // NOTE: no global express.json(). The tRPC Express adapter parses its own
-  // request body, and Multer handles multipart uploads — a global JSON parser
-  // would consume the stream first and break tRPC mutations. Add express.json()
-  // per-route only if a plain Express JSON route needs it later.
+  // Parse JSON bodies (for any plain Express routes). Harmless to tRPC — its
+  // adapter reuses req.body — and to Multer, which only handles multipart.
+  app.use(express.json());
 
   // express-session: HTTP-only cookie.
   app.use(
@@ -32,8 +31,8 @@ export function createApp() {
     }),
   );
 
-  // File upload pipeline (plain Express route, not tRPC).
-  app.use(uploadRouter);
+  // File upload / download / preview (plain Express routes, not tRPC).
+  app.use(filesRouter);
 
   // tRPC pipeline.
   app.use(
