@@ -1,0 +1,12 @@
+{
+  "name": "emp-mgmt",
+  "private": true,
+  "packageManager": "pnpm@10.33.4",
+  "scripts": {
+    "build": "pnpm --filter client build",
+    "typecheck": "pnpm --filter @emp-mgmt/shared typecheck && pnpm --filter emp-mgmt-backend typecheck && pnpm --filter client exec tsc -b",
+    "lint": "pnpm --filter client lint",
+    "dev:backend": "pnpm --filter emp-mgmt-backend dev",
+    "dev:client": "pnpm --filter client dev"
+  }
+}

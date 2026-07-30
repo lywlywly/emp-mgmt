@@ -3,7 +3,7 @@ import { Schema, model, InferSchemaType } from "mongoose";
 const userSchema = new Schema(
   {
     username: { type: String, required: true, unique: true },
-    // Plain string in this phase — no hashing (that comes in a later phase).
+    // Password hashes are created and verified by auth/password.ts.
     password: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     role: { type: String, enum: ["employee", "hr"], default: "employee" },

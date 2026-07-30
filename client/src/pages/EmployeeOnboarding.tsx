@@ -2,21 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 
 import { OnboardingForm } from "@/features/onboarding/OnboardingForm";
 import { SubmittedOnboarding } from "@/features/onboarding/SubmittedOnboarding";
-import { authMeQueryOptions, trpc } from "@/lib/trpc";
+import { trpc } from "@/lib/trpc";
 
 export default function EmployeeOnboarding() {
-  const { data: session } = useQuery(authMeQueryOptions());
-  const applicationQuery = useQuery(
-    trpc.onboarding.getMine.queryOptions(undefined, {
-      enabled: session?.onboardingStatus === "pending",
-    }),
-  );
+  const applicationQuery = useQuery(trpc.onboarding.getMine.queryOptions());
 
-  if (!session || session.onboardingStatus === "approved") {
-    return null;
-  }
-
-  if (session.onboardingStatus === "pending") {
+  if (applicationQuery.isPending)
+    return <div className="h-96 animate-pulse rounded-lg border bg-muted/40" />;
+  if (applicationQuery.isError)
+    return (
+      <p className="text-sm text-destructive">
+        {applicationQuery.error.message}
+      </p>
+    );
+  const application = applicationQuery.data;
+  if (application?.status === "approved") return null;
+  if (application?.status === "pending") {
     return (
       <section className="max-w-2xl space-y-6">
         <p className="text-sm font-medium text-primary">Employee portal</p>
@@ -28,20 +29,12 @@ export default function EmployeeOnboarding() {
             Your application is waiting for HR review.
           </p>
         </div>
-        {applicationQuery.data ? (
-          <SubmittedOnboarding application={applicationQuery.data} />
-        ) : applicationQuery.isError ? (
-          <p className="text-sm text-destructive" role="alert">
-            {applicationQuery.error.message}
-          </p>
-        ) : (
-          <div className="h-96 animate-pulse rounded-lg border bg-muted/40" />
-        )}
+        <SubmittedOnboarding application={application} />
       </section>
     );
   }
 
-  const isRejected = session.onboardingStatus === "rejected";
+  const isRejected = application?.status === "rejected";
 
   return (
     <section className="max-w-2xl space-y-6">
@@ -60,12 +53,16 @@ export default function EmployeeOnboarding() {
             Changes required
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Please confirm your work-authorization information and upload the
-            required document before resubmitting.
+            {application.hrFeedback}
           </p>
         </div>
       )}
-      <OnboardingForm isRejected={isRejected} />
+      <OnboardingForm
+        application={
+          application?.status === "rejected" ? application : undefined
+        }
+        isRejected={isRejected}
+      />
     </section>
   );
 }

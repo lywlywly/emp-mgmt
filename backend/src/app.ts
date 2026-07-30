@@ -1,10 +1,10 @@
 import express from "express";
 import session from "express-session";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "./trpc/router";
-import { createContext } from "./trpc/context";
-import { filesRouter } from "./routes/files";
-import { errorHandler } from "./middleware/error";
+import { appRouter } from "./trpc/router.js";
+import { createContext } from "./trpc/context.js";
+import { filesRouter } from "./routes/files.js";
+import { errorHandler } from "./middleware/error.js";
 
 export function createApp() {
   const app = express();
@@ -18,10 +18,7 @@ export function createApp() {
     session({
       secret: process.env.SESSION_SECRET ?? "dev-secret-change-me",
       resave: false,
-      // Phase 0: set to true so `curl -i` immediately shows the HTTP-only
-      // Set-Cookie, verifying the session pipeline; switch back to false
-      // once auth is added.
-      saveUninitialized: true,
+      saveUninitialized: false,
       cookie: {
         httpOnly: true,
         sameSite: "lax",

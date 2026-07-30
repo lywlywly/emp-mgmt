@@ -1,8 +1,9 @@
+import type { OnboardingDocumentKind } from "@/lib/onboarding";
 import type {
   OnboardingApplication,
-  OnboardingDocumentKind,
-  OnboardingFormData,
-} from "@/lib/onboarding";
+  OnboardingApplicationData,
+} from "@emp-mgmt/shared";
+import { fileDownloadUrl } from "@/lib/files";
 
 type SubmittedOnboardingProps = {
   application: OnboardingApplication;
@@ -21,11 +22,16 @@ function fullName({
   firstName,
   middleName,
   lastName,
-}: Pick<OnboardingFormData["name"], "firstName" | "middleName" | "lastName">) {
+}: Pick<
+  OnboardingApplicationData["name"],
+  "firstName" | "middleName" | "lastName"
+>) {
   return [firstName, middleName, lastName].filter(Boolean).join(" ");
 }
 
-function contactSummary(contact: OnboardingFormData["reference"]) {
+function contactSummary(
+  contact: NonNullable<OnboardingApplicationData["reference"]>,
+) {
   return [
     fullName(contact),
     contact.relationship && `(${contact.relationship})`,
@@ -36,7 +42,7 @@ function contactSummary(contact: OnboardingFormData["reference"]) {
     .join(" · ");
 }
 
-function workAuthorizationLabel(data: OnboardingFormData) {
+function workAuthorizationLabel(data: OnboardingApplicationData) {
   const authorization = data.workAuthorization;
 
   if (authorization.isUsCitizenOrPermanentResident) {
@@ -78,7 +84,8 @@ function maskedSsn(ssn: string) {
 
 export function SubmittedOnboarding({ application }: SubmittedOnboardingProps) {
   const { data } = application;
-  const referenceProvided = Object.values(data.reference).some(Boolean);
+  const referenceProvided =
+    data.reference && Object.values(data.reference).some(Boolean);
 
   return (
     <div className="rounded-lg border bg-card p-5 text-card-foreground sm:p-6">
@@ -161,7 +168,7 @@ export function SubmittedOnboarding({ application }: SubmittedOnboardingProps) {
             {referenceProvided && (
               <Detail
                 label="Reference"
-                value={contactSummary(data.reference)}
+                value={contactSummary(data.reference!)}
               />
             )}
           </dl>
@@ -172,11 +179,22 @@ export function SubmittedOnboarding({ application }: SubmittedOnboardingProps) {
           {data.documents.length ? (
             <ul className="mt-3 space-y-2 text-sm">
               {data.documents.map((document) => (
-                <li key={document.kind}>
-                  <span className="font-medium">
-                    {documentLabel(document.kind)}:
-                  </span>{" "}
-                  {document.fileName}
+                <li
+                  className="flex items-center justify-between gap-3"
+                  key={document.id}
+                >
+                  <span>
+                    <span className="font-medium">
+                      {documentLabel(document.kind)}:
+                    </span>{" "}
+                    {document.fileName}
+                  </span>
+                  <a
+                    className="shrink-0 text-primary underline-offset-4 hover:underline"
+                    href={fileDownloadUrl(document.id)}
+                  >
+                    Download
+                  </a>
                 </li>
               ))}
             </ul>

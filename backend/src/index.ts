@@ -1,5 +1,5 @@
-import { createApp } from "./app";
-import { connectDB } from "./db";
+import { createApp } from "./app.js";
+import { connectDB } from "./db.js";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const MONGODB_URI = process.env.MONGODB_URI;

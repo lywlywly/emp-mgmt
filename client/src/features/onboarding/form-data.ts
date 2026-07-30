@@ -1,4 +1,5 @@
 import type { EmergencyContact, OnboardingFormData } from "@/lib/onboarding";
+import type { OnboardingApplicationData } from "@emp-mgmt/shared";
 import type { FieldPath } from "react-hook-form";
 
 export const onboardingSteps: {
@@ -59,3 +60,25 @@ export const onboardingDefaultValues: OnboardingFormData = {
   emergencyContacts: [emptyContact()],
   documents: [],
 };
+
+export function onboardingFormValues(
+  application?: OnboardingApplicationData,
+): OnboardingFormData {
+  if (!application) return onboardingDefaultValues;
+
+  return {
+    ...application,
+    name: { ...application.name },
+    address: { ...application.address },
+    contact: { ...application.contact },
+    personalDetails: { ...application.personalDetails },
+    workAuthorization: { ...application.workAuthorization },
+    reference: application.reference
+      ? { ...application.reference }
+      : emptyContact(),
+    emergencyContacts: application.emergencyContacts.map((contact) => ({
+      ...contact,
+    })),
+    documents: application.documents.map((document) => ({ ...document })),
+  };
+}

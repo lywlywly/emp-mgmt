@@ -3,7 +3,7 @@ import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router";
 
 import AppLayout from "@/layouts/AppLayout";
-import { authMeQueryOptions } from "@/lib/trpc";
+import { authMeQueryOptions, trpc } from "@/lib/trpc";
 
 const EmployeeOnboarding = lazy(() => import("@/pages/EmployeeOnboarding"));
 const EmployeeProfile = lazy(() => import("@/pages/EmployeeProfile"));
@@ -11,9 +11,17 @@ const EmployeeVisaStatus = lazy(() => import("@/pages/EmployeeVisaStatus"));
 const HrDashboard = lazy(() => import("@/pages/HrDashboard"));
 const HrHiringManagement = lazy(() => import("@/pages/HrHiringManagement"));
 const HrVisaStatus = lazy(() => import("@/pages/HrVisaStatus"));
+const Login = lazy(() => import("@/pages/Login"));
+const Register = lazy(() => import("@/pages/Register"));
+const HrInvitations = lazy(() => import("@/pages/HrInvitations"));
 
 export function AppRoutes() {
   const { data: session, isError, isPending } = useQuery(authMeQueryOptions());
+  const applicationQuery = useQuery(
+    trpc.onboarding.getMine.queryOptions(undefined, {
+      enabled: session?.role === "employee",
+    }),
+  );
 
   if (isPending) {
     return (
@@ -46,7 +54,7 @@ export function AppRoutes() {
     );
   }
 
-  if (isError || !session) {
+  if (isError) {
     return (
       <main className="grid min-h-screen place-items-center bg-muted/30 px-6">
         <p className="text-sm text-muted-foreground">
@@ -56,29 +64,27 @@ export function AppRoutes() {
     );
   }
 
-  const { onboardingStatus, user } = session;
-
-  if (user.role === "employee" && onboardingStatus !== "approved") {
+  if (!session) {
     return (
       <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/employee/onboarding" element={<EmployeeOnboarding />} />
-          <Route
-            path="*"
-            element={<Navigate replace to="/employee/onboarding" />}
-          />
-        </Route>
+        <Route path="/register" element={<Register />} />
+        <Route path="*" element={<Login />} />
       </Routes>
     );
   }
 
-  if (user.role === "hr") {
+  if (session.role === "employee" && applicationQuery.isPending) {
+    return <div className="min-h-screen bg-muted/30" />;
+  }
+
+  if (session.role === "hr") {
     return (
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/hr" element={<HrDashboard />} />
           <Route path="/hr/hiring" element={<HrHiringManagement />} />
           <Route path="/hr/visa-status" element={<HrVisaStatus />} />
+          <Route path="/hr/invitations" element={<HrInvitations />} />
           <Route path="*" element={<Navigate replace to="/hr" />} />
         </Route>
       </Routes>
@@ -88,9 +94,25 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/employee/profile" element={<EmployeeProfile />} />
-        <Route path="/employee/visa-status" element={<EmployeeVisaStatus />} />
-        <Route path="*" element={<Navigate replace to="/employee/profile" />} />
+        <Route path="/employee/onboarding" element={<EmployeeOnboarding />} />
+        {applicationQuery.data?.status === "approved" ? (
+          <>
+            <Route path="/employee/profile" element={<EmployeeProfile />} />
+            <Route
+              path="/employee/visa-status"
+              element={<EmployeeVisaStatus />}
+            />
+            <Route
+              path="*"
+              element={<Navigate replace to="/employee/profile" />}
+            />
+          </>
+        ) : (
+          <Route
+            path="*"
+            element={<Navigate replace to="/employee/onboarding" />}
+          />
+        )}
       </Route>
     </Routes>
   );

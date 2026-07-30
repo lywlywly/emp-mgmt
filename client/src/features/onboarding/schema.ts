@@ -1,61 +1,21 @@
 import { z } from "zod";
+import {
+  addressSchema,
+  emergencyContactSchema,
+  onboardingDocumentKindSchema,
+  personNameSchema,
+  referenceContactSchema,
+} from "@emp-mgmt/shared";
 
 import type { OnboardingFormData } from "@/lib/onboarding";
 
 const requiredText = (label: string) =>
   z.string().trim().min(1, `${label} is required.`);
 const optionalText = z.string().trim();
-const optionalEmail = z.union([
-  z.literal(""),
-  z.string().trim().email("Enter a valid email address."),
-]);
 const phoneNumber = z
   .string()
   .regex(/^\d{3}-\d{3}-\d{4}$/, "Enter a valid U.S. phone number.");
 const optionalPhoneNumber = z.union([z.literal(""), phoneNumber]);
-
-const personNameSchema = z.object({
-  firstName: requiredText("First name"),
-  middleName: optionalText,
-  lastName: requiredText("Last name"),
-  preferredName: optionalText,
-});
-
-const emergencyContactSchema = z.object({
-  firstName: requiredText("First name"),
-  middleName: optionalText,
-  lastName: requiredText("Last name"),
-  phone: optionalPhoneNumber,
-  email: optionalEmail,
-  relationship: requiredText("Relationship"),
-});
-
-const referenceSchema = z
-  .object({
-    firstName: optionalText,
-    middleName: optionalText,
-    lastName: optionalText,
-    phone: optionalPhoneNumber,
-    email: optionalEmail,
-    relationship: optionalText,
-  })
-  .superRefine((reference, context) => {
-    if (!Object.values(reference).some(Boolean)) return;
-
-    for (const [field, label] of [
-      ["firstName", "First name"],
-      ["lastName", "Last name"],
-      ["relationship", "Relationship"],
-    ] as const) {
-      if (!reference[field]) {
-        context.addIssue({
-          code: "custom",
-          message: `${label} is required when adding a reference.`,
-          path: [field],
-        });
-      }
-    }
-  });
 
 const workAuthorizationSchema = z
   .object({
@@ -127,7 +87,8 @@ const workAuthorizationSchema = z
   });
 
 const documentSchema = z.object({
-  kind: z.enum(["profile_photo", "drivers_license", "work_authorization"]),
+  id: z.string().optional(),
+  kind: onboardingDocumentKindSchema,
   fileName: requiredText("File name"),
   mimeType: z.string(),
   size: z
@@ -142,18 +103,9 @@ const documentSchema = z.object({
 export const onboardingSchema = z
   .object({
     name: personNameSchema,
-    address: z.object({
-      buildingOrApt: optionalText,
-      street: requiredText("Street"),
-      city: requiredText("City"),
-      state: z.string().length(2, "Select a state."),
-      zipCode: z
-        .string()
-        .trim()
-        .regex(/^\d{5}(?:-\d{4})?$/, "Enter a valid ZIP code."),
-    }),
+    address: addressSchema,
     contact: z.object({
-      email: z.string().trim().email("Enter a valid email address."),
+      email: z.string().trim().pipe(z.email("Enter a valid email address.")),
       cellPhone: phoneNumber,
       workPhone: optionalPhoneNumber,
     }),
@@ -168,7 +120,7 @@ export const onboardingSchema = z
       }),
     }),
     workAuthorization: workAuthorizationSchema,
-    reference: referenceSchema,
+    reference: referenceContactSchema,
     emergencyContacts: z
       .array(emergencyContactSchema)
       .min(1, "Add at least one emergency contact."),
