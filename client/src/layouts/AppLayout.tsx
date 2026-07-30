@@ -64,6 +64,9 @@ function AppLayout() {
                 <NavLink className={navLinkClass} to="/hr/hiring">
                   Hiring management
                 </NavLink>
+                <NavLink className={navLinkClass} to="/hr/visa-status">
+                  Visa status
+                </NavLink>
               </>
             )}
             <button className={navLinkClass({ isActive: false })} type="button">
