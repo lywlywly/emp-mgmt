@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { FileMetadataModel } from "../models/FileMetadata";
+import { FileMetadataModel } from "../models/FileMetadata.js";
 
 // Reusable ownership guard: throws FORBIDDEN unless the resource's owner
 // matches the logged-in user. Accepts an ObjectId or string.

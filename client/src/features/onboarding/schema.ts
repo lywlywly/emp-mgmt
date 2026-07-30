@@ -7,7 +7,7 @@ const requiredText = (label: string) =>
 const optionalText = z.string().trim();
 const optionalEmail = z.union([
   z.literal(""),
-  z.string().trim().email("Enter a valid email address."),
+  z.string().trim().pipe(z.email("Enter a valid email address.")),
 ]);
 const phoneNumber = z
   .string()
@@ -153,7 +153,7 @@ export const onboardingSchema = z
         .regex(/^\d{5}(?:-\d{4})?$/, "Enter a valid ZIP code."),
     }),
     contact: z.object({
-      email: z.string().trim().email("Enter a valid email address."),
+      email: z.string().trim().pipe(z.email("Enter a valid email address.")),
       cellPhone: phoneNumber,
       workPhone: optionalPhoneNumber,
     }),

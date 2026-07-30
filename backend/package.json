@@ -2,13 +2,20 @@
   "name": "emp-mgmt-backend",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
+    "predev": "pnpm --filter @emp-mgmt/shared build",
     "dev": "node --env-file=.env --watch --import tsx src/index.ts",
+    "prebuild": "pnpm --filter @emp-mgmt/shared build",
     "build": "tsc",
+    "prestart": "pnpm --filter @emp-mgmt/shared build",
     "start": "node --env-file=.env dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "pretypecheck": "pnpm --filter @emp-mgmt/shared build",
+    "typecheck": "tsc --noEmit",
+    "test:http": "node scripts/onboarding-http-smoke.mjs"
   },
   "dependencies": {
+    "@emp-mgmt/shared": "workspace:*",
     "@trpc/server": "^11",
     "bcrypt": "^6.0.0",
     "express": "^4",
@@ -16,7 +23,7 @@
     "mongoose": "^8",
     "multer": "^2",
     "nodemailer": "^9.0.3",
-    "zod": "^3"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

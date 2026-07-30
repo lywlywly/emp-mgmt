@@ -1,8 +1,12 @@
-import { z } from "zod";
 import crypto from "node:crypto";
-import { router, hrProcedure } from "../trpc";
-import { InvitationModel } from "../../models/Invitation";
-import { sendEmail } from "../../services/email";
+import {
+  invitationGenerateInputSchema,
+  invitationGenerateOutputSchema,
+  invitationListItemSchema,
+} from "@emp-mgmt/shared";
+import { router, hrProcedure } from "../trpc.js";
+import { InvitationModel } from "../../models/Invitation.js";
+import { sendEmail } from "../../services/email.js";
 
 const TOKEN_TTL_MS = 3 * 60 * 60 * 1000; // token is valid for 3 hours
 
@@ -11,54 +15,54 @@ function registrationLink(token: string): string {
   return `${base}/register?token=${token}`;
 }
 
-const generateInput = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
-});
-
 export const invitationRouter = router({
   // HR generates a unique token, stores an Invitation, and emails the link.
-  generateAndSend: hrProcedure.input(generateInput).mutation(async ({ input }) => {
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
+  generateAndSend: hrProcedure
+    .input(invitationGenerateInputSchema)
+    .output(invitationGenerateOutputSchema)
+    .mutation(async ({ input }) => {
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
-    const invitation = await InvitationModel.create({
-      email: input.email,
-      name: input.name,
-      token,
-      expiresAt,
-      // status defaults to "pending"
-    });
+      const invitation = await InvitationModel.create({
+        email: input.email,
+        name: input.name,
+        token,
+        expiresAt,
+        // status defaults to "pending"
+      });
 
-    const link = registrationLink(token);
-    await sendEmail({
-      to: input.email,
-      subject: "Your registration link",
-      text:
-        `Hello ${input.name},\n\n` +
-        `You have been invited to register. Use the link below to complete ` +
-        `your registration (valid for 3 hours):\n\n${link}\n`,
-    });
+      const link = registrationLink(token);
+      await sendEmail({
+        to: input.email,
+        subject: "Your registration link",
+        text:
+          `Hello ${input.name},\n\n` +
+          `You have been invited to register. Use the link below to complete ` +
+          `your registration (valid for 3 hours):\n\n${link}\n`,
+      });
 
-    return {
-      id: String(invitation._id),
-      email: invitation.email,
-      name: invitation.name,
-      token,
-      link,
-      expiresAt,
-    };
-  }),
+      return {
+        id: String(invitation._id),
+        email: invitation.email,
+        name: input.name,
+        token,
+        link,
+        expiresAt: expiresAt.toISOString(),
+      };
+    }),
 
   // HR views the history of invitations, newest first.
-  list: hrProcedure.query(async () => {
-    const invitations = await InvitationModel.find().sort({ createdAt: -1 });
+  list: hrProcedure.output(invitationListItemSchema.array()).query(async () => {
+    const invitations = await InvitationModel.find()
+      .sort({ createdAt: -1 })
+      .lean();
     return invitations.map((inv) => ({
       id: String(inv._id),
       email: inv.email,
-      name: inv.name,
+      name: inv.name ?? "",
       link: registrationLink(inv.token),
-      status: inv.status, // "pending" | "submitted" — whether onboarding was submitted
+      status: inv.status,
     }));
   }),
 });
