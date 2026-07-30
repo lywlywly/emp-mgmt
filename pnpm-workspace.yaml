@@ -2,3 +2,6 @@ packages:
   - client
   - backend
   - packages/*
+allowBuilds:
+  bcrypt: true
+  esbuild: true

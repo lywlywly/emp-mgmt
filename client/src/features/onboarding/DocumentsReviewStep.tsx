@@ -67,6 +67,7 @@ export function DocumentsReviewStep() {
             {
               kind,
               fileName: file.name,
+              file,
               mimeType: file.type,
               size: file.size,
             },

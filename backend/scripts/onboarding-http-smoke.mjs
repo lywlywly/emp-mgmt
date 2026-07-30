@@ -33,8 +33,12 @@ const hrCredentials = {
 };
 
 function getSessionCookie(response) {
-  const setCookies = response.headers.getSetCookie?.() ?? [response.headers.get("set-cookie")];
-  const sessionCookie = setCookies.find((cookie) => cookie?.startsWith("connect.sid="));
+  const setCookies = response.headers.getSetCookie?.() ?? [
+    response.headers.get("set-cookie"),
+  ];
+  const sessionCookie = setCookies.find((cookie) =>
+    cookie?.startsWith("connect.sid="),
+  );
 
   if (!sessionCookie) {
     throw new Error("Login succeeded without returning a connect.sid cookie.");
@@ -67,7 +71,9 @@ async function trpcRequest(procedure, { cookie, input, method = "GET" } = {}) {
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(`${procedure} failed (${response.status}): ${errorMessage(body)}`);
+    throw new Error(
+      `${procedure} failed (${response.status}): ${errorMessage(body)}`,
+    );
   }
 
   return { data: body?.result?.data, response };
@@ -140,9 +146,12 @@ async function main() {
   const employeeCookie = await login(employeeCredentials);
 
   console.log("2. Confirming the employee has no onboarding application...");
-  const { data: existingApplication } = await trpcRequest("onboarding.getMine", {
-    cookie: employeeCookie,
-  });
+  const { data: existingApplication } = await trpcRequest(
+    "onboarding.getMine",
+    {
+      cookie: employeeCookie,
+    },
+  );
   if (existingApplication !== null) {
     throw new Error(
       "Expected no onboarding application. Delete or reject the existing application before running this script.",
@@ -150,24 +159,37 @@ async function main() {
   }
 
   console.log("3. Submitting the employee onboarding application...");
-  const { data: submittedApplication } = await trpcRequest("onboarding.submit", {
-    cookie: employeeCookie,
-    input: applicationInput,
-    method: "POST",
-  });
+  const { data: submittedApplication } = await trpcRequest(
+    "onboarding.submit",
+    {
+      cookie: employeeCookie,
+      input: applicationInput,
+      method: "POST",
+    },
+  );
   const applicationId = submittedApplication?.id;
-  if (!applicationId) throw new Error("Submission did not return an application id.");
+  if (!applicationId)
+    throw new Error("Submission did not return an application id.");
 
   console.log("4. Signing in as HR...");
   const hrCookie = await login(hrCredentials);
 
   console.log("5. Verifying the application appears in HR's pending queue...");
-  const { data: pendingApplications } = await trpcRequest("onboarding.listByStatus", {
-    cookie: hrCookie,
-    input: { status: "pending" },
-  });
-  if (!pendingApplications?.some((application) => application.id === applicationId)) {
-    throw new Error("The submitted application was not found in the pending queue.");
+  const { data: pendingApplications } = await trpcRequest(
+    "onboarding.listByStatus",
+    {
+      cookie: hrCookie,
+      input: { status: "pending" },
+    },
+  );
+  if (
+    !pendingApplications?.some(
+      (application) => application.id === applicationId,
+    )
+  ) {
+    throw new Error(
+      "The submitted application was not found in the pending queue.",
+    );
   }
 
   console.log("6. Approving the application as HR...");
@@ -181,9 +203,12 @@ async function main() {
   const { data: profile } = await trpcRequest("profile.getMine", {
     cookie: employeeCookie,
   });
-  if (!profile?.id) throw new Error("Approval did not create an employee profile.");
+  if (!profile?.id)
+    throw new Error("Approval did not create an employee profile.");
 
-  console.log("PASS: employee onboarding was submitted and approved over HTTP.");
+  console.log(
+    "PASS: employee onboarding was submitted and approved over HTTP.",
+  );
 }
 
 main().catch((error) => {

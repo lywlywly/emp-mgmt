@@ -1,8 +1,7 @@
 import { NavLink, Outlet } from "react-router";
-import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-
-import { authMeQueryOptions } from "@/lib/trpc";
+import { queryClient, trpc, authMeQueryOptions } from "@/lib/trpc";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-2 text-sm transition-colors ${
@@ -13,14 +12,27 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 function AppLayout() {
   const { data: session } = useQuery(authMeQueryOptions());
+  const applicationQuery = useQuery(
+    trpc.onboarding.getMine.queryOptions(undefined, {
+      enabled: session?.role === "employee",
+    }),
+  );
+  const logout = useMutation(
+    trpc.auth.logout.mutationOptions({
+      onSuccess: () => {
+        queryClient.setQueryData(authMeQueryOptions().queryKey, null);
+      },
+    }),
+  );
 
   if (!session) {
     return null;
   }
 
-  const { onboardingStatus, user, workAuthorization } = session;
-  const onboardingComplete = onboardingStatus === "approved";
-  const isEmployee = user.role === "employee";
+  const application = applicationQuery.data;
+  const onboardingComplete = application?.status === "approved";
+  const isEmployee = session.role === "employee";
+  const hasOpt = application?.data.workAuthorization.type === "f1";
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -45,7 +57,7 @@ function AppLayout() {
                     <NavLink className={navLinkClass} to="/employee/profile">
                       Profile
                     </NavLink>
-                    {workAuthorization === "opt" && (
+                    {hasOpt && (
                       <NavLink
                         className={navLinkClass}
                         to="/employee/visa-status"
@@ -67,9 +79,16 @@ function AppLayout() {
                 <NavLink className={navLinkClass} to="/hr/visa-status">
                   Visa status
                 </NavLink>
+                <NavLink className={navLinkClass} to="/hr/invitations">
+                  Invitations
+                </NavLink>
               </>
             )}
-            <button className={navLinkClass({ isActive: false })} type="button">
+            <button
+              className={navLinkClass({ isActive: false })}
+              onClick={() => logout.mutate()}
+              type="button"
+            >
               Logout
             </button>
           </div>

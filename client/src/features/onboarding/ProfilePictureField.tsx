@@ -111,6 +111,9 @@ export function ProfilePictureField() {
       canvas.toBlob(resolve, "image/jpeg", 0.9);
     });
     if (!croppedImage) return;
+    const file = new File([croppedImage], pendingPhoto.fileName, {
+      type: "image/jpeg",
+    });
 
     const previewUrl = URL.createObjectURL(croppedImage);
     form.setValue(
@@ -122,6 +125,7 @@ export function ProfilePictureField() {
         {
           kind: "profile_photo",
           fileName: pendingPhoto.fileName,
+          file,
           mimeType: "image/jpeg",
           size: croppedImage.size,
           previewUrl,

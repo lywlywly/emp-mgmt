@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import {
   onboardingApplicationSchema,
+  onboardingApplicationDataSchema,
   onboardingIdInputSchema,
   onboardingListItemSchema,
   onboardingReviewInputSchema,
@@ -30,6 +31,19 @@ type StoredApplication = {
 
 function presentReference(reference: OnboardingSubmitInput["reference"]) {
   return reference && Object.values(reference).some(Boolean) ? reference : null;
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJson).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`);
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
 }
 
 async function toApplication(
@@ -76,16 +90,33 @@ export const onboardingRouter = router({
         });
       }
 
+      const submittedData = onboardingApplicationDataSchema.parse({
+        ...input,
+        contact: { ...input.contact, email: user.email },
+        reference: presentReference(input.reference),
+      });
+
+      if (existing?.status === "rejected") {
+        const previousData = (await toApplication(existing)).data;
+        if (stableJson(previousData) === stableJson(submittedData)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Update the application before resubmitting it.",
+          });
+        }
+      }
+
       await assertFilesOwnedBy(
         ctx.userId,
         input.documents.map((document) => document.id),
       );
 
       const data = {
-        ...input,
-        contact: { ...input.contact, email: user.email },
-        reference: presentReference(input.reference),
-        documents: input.documents.map(({ id, kind }) => ({ kind, file: id })),
+        ...submittedData,
+        documents: submittedData.documents.map(({ id, kind }) => ({
+          kind,
+          file: id,
+        })),
       };
 
       await OnboardingApplicationModel.deleteOne({ user: ctx.userId });

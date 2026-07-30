@@ -24,9 +24,14 @@ export async function assertFilesOwnedBy(
   const ids = [...new Set(fileIds.filter((id): id is string => !!id))];
   if (ids.length === 0) return;
 
-  const files = await FileMetadataModel.find({ _id: { $in: ids } }).select("uploadedBy").lean();
+  const files = await FileMetadataModel.find({ _id: { $in: ids } })
+    .select("uploadedBy")
+    .lean();
   if (files.length !== ids.length) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Referenced file not found" });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Referenced file not found",
+    });
   }
   for (const file of files) {
     if (String(file.uploadedBy) !== userId) {

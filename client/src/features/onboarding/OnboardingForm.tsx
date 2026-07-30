@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ContactsStep } from "@/features/onboarding/ContactsStep";
 import { DocumentsReviewStep } from "@/features/onboarding/DocumentsReviewStep";
 import {
-  onboardingDefaultValues,
+  onboardingFormValues,
   onboardingSteps,
 } from "@/features/onboarding/form-data";
 import { OnboardingStepRail } from "@/features/onboarding/OnboardingStepRail";
@@ -10,21 +10,31 @@ import { PersonalInformationStep } from "@/features/onboarding/PersonalInformati
 import { onboardingSchema } from "@/features/onboarding/schema";
 import { WorkAuthorizationStep } from "@/features/onboarding/WorkAuthorizationStep";
 import type { OnboardingFormData } from "@/lib/onboarding";
-import { authMeQueryOptions, queryClient, trpc } from "@/lib/trpc";
+import { uploadFile } from "@/lib/files";
+import { queryClient, trpc } from "@/lib/trpc";
+import {
+  onboardingSubmitInputSchema,
+  type OnboardingApplication,
+} from "@emp-mgmt/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 type OnboardingFormProps = {
+  application?: OnboardingApplication;
   isRejected: boolean;
 };
 
-export function OnboardingForm({ isRejected }: OnboardingFormProps) {
+export function OnboardingForm({
+  application,
+  isRejected,
+}: OnboardingFormProps) {
   const [activeStep, setActiveStep] = useState(0);
   const [completedThrough, setCompletedThrough] = useState(-1);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const form = useForm<OnboardingFormData>({
-    defaultValues: onboardingDefaultValues,
+    defaultValues: onboardingFormValues(application?.data),
     mode: "onBlur",
     reValidateMode: "onBlur",
     resolver: zodResolver(onboardingSchema),
@@ -33,10 +43,58 @@ export function OnboardingForm({ isRejected }: OnboardingFormProps) {
     trpc.onboarding.submit.mutationOptions({
       onSuccess: () =>
         queryClient.invalidateQueries({
-          queryKey: authMeQueryOptions().queryKey,
+          queryKey: trpc.onboarding.getMine.queryKey(),
         }),
     }),
   );
+
+  async function submit(data: OnboardingFormData) {
+    try {
+      setSubmissionError(null);
+      const documents = await Promise.all(
+        data.documents.map(async (document) => {
+          if (!document.file && !document.id) {
+            throw new Error(`${document.fileName} must be selected again.`);
+          }
+          if (!document.file) return document;
+          return { ...document, ...(await uploadFile(document.file)) };
+        }),
+      );
+      const input = onboardingSubmitInputSchema.parse({
+        ...data,
+        contact: {
+          cellPhone: data.contact.cellPhone,
+          workPhone: data.contact.workPhone,
+        },
+        documents: documents.map(({ kind, id, fileName, mimeType, size }) => ({
+          kind,
+          id,
+          fileName,
+          mimeType,
+          size,
+        })),
+      });
+      submitApplication.mutate(input);
+    } catch (error) {
+      setSubmissionError(
+        error instanceof Error
+          ? error.message
+          : "Could not submit the application.",
+      );
+    }
+  }
+
+  async function submitApplicationForm() {
+    for (const [index, onboardingStep] of onboardingSteps.entries()) {
+      const isStepValid = await form.trigger(onboardingStep.fields);
+      if (!isStepValid) {
+        setActiveStep(index);
+        return;
+      }
+    }
+
+    await submit(form.getValues());
+  }
 
   async function continueToNextStep() {
     const isCurrentStepValid = await form.trigger(
@@ -81,7 +139,10 @@ export function OnboardingForm({ isRejected }: OnboardingFormProps) {
         Required fields
       </p>
       <form
-        onSubmit={form.handleSubmit((data) => submitApplication.mutate(data))}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submitApplicationForm();
+        }}
       >
         <div className="rounded-lg border bg-card p-5 text-card-foreground sm:p-6">
           {step}
@@ -111,6 +172,11 @@ export function OnboardingForm({ isRejected }: OnboardingFormProps) {
           {submitApplication.isError && (
             <p className="mt-3 text-sm text-destructive" role="alert">
               {submitApplication.error.message}
+            </p>
+          )}
+          {submissionError && (
+            <p className="mt-3 text-sm text-destructive" role="alert">
+              {submissionError}
             </p>
           )}
         </div>
