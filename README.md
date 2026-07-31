@@ -13,9 +13,9 @@ contracts.
 
 Use Node.js 22 or newer and pnpm 10.33.4.
 
-```powershell
+```sh
 pnpm install
-Copy-Item backend/.env.example backend/.env
+cp backend/.env.example backend/.env
 ```
 
 Set `MONGODB_URI` and a secure `SESSION_SECRET` in `backend/.env`. The default
@@ -25,11 +25,11 @@ frontend URL is `http://localhost:5173`; update `FRONTEND_URL` if it differs.
 
 Start the API and frontend in separate terminals:
 
-```powershell
+```sh
 pnpm dev:backend
 ```
 
-```powershell
+```sh
 pnpm dev:client
 ```
 
@@ -38,7 +38,7 @@ API at `http://localhost:4000`.
 
 ## Checks
 
-```powershell
+```sh
 pnpm typecheck
 pnpm lint
 pnpm build
@@ -51,6 +51,6 @@ server code is bundled for the browser.
 To smoke-test the live onboarding API, set the test credentials expected by
 the script and run:
 
-```powershell
+```sh
 pnpm --filter emp-mgmt-backend test:http
 ```
