@@ -89,7 +89,7 @@ export default function HrVisaStatus() {
         </p>
       </div>
 
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2">
         <Button
           onClick={() => setView("in-progress")}
           type="button"
