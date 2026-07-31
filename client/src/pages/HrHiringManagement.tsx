@@ -99,7 +99,7 @@ export default function HrHiringManagement() {
             </p>
           ) : application.data ? (
             <div className="space-y-5">
-              <HiringApplicationDetails application={application.data} />
+              <HiringApplicationDetails profile={application.data} />
               <label className="block text-sm font-medium">
                 Feedback for a rejection
                 <textarea

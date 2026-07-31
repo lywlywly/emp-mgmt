@@ -1,16 +1,22 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ProfileDetails,
   ProfileField as Field,
   ProfileSection,
-  SaveButton,
 } from "@/features/profile/ProfilePrimitives";
+import {
+  ProfilePhotoPicker,
+  type ProfilePhoto,
+} from "@/features/onboarding/ProfilePhotoPicker";
+import { fileDownloadUrl, filePreviewUrl, uploadFile } from "@/lib/files";
 import { queryClient, trpc } from "@/lib/trpc";
 import type {
   EmployeeProfile,
   EmployeeProfileUpdateSectionInput,
 } from "@emp-mgmt/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 type Section =
@@ -22,6 +28,14 @@ function textValue(values: FormData, name: string) {
 
 function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
   const [editing, setEditing] = useState<Section | null>(null);
+  const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<{
+    file: File;
+    fileName: string;
+    previewUrl: string;
+    sourceUrl: string;
+  } | null>(null);
+  const [workAuthorizationFile, setWorkAuthorizationFile] =
+    useState<File | null>(null);
   const [isUsCitizenOrPermanentResident, setIsUsCitizenOrPermanentResident] =
     useState(profile.data.workAuthorization.isUsCitizenOrPermanentResident);
   const [emergencyContactCount, setEmergencyContactCount] = useState(
@@ -31,6 +45,7 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     trpc.profile.updateSection.mutationOptions({
       onSuccess: () => {
         setEditing(null);
+        setSelectedProfilePhoto(null);
         void queryClient.invalidateQueries({
           queryKey: trpc.profile.getMine.queryKey(),
         });
@@ -43,6 +58,7 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
       setIsUsCitizenOrPermanentResident(
         profile.data.workAuthorization.isUsCitizenOrPermanentResident,
       );
+      setWorkAuthorizationFile(null);
     }
     if (section === "emergencyContact") {
       setEmergencyContactCount(profile.data.emergencyContacts.length);
@@ -50,19 +66,29 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     setEditing(section);
   }
 
+  function cancelEditing(section: Section) {
+    if (!window.confirm("Discard your changes?")) return;
+    if (section === "name") setSelectedProfilePhoto(null);
+    setEditing(null);
+  }
+
   function save(input: EmployeeProfileUpdateSectionInput) {
     updateProfile.mutate(input);
   }
 
-  function submitName(event: FormEvent<HTMLFormElement>) {
+  async function submitName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
+    const profilePictureId = selectedProfilePhoto
+      ? (await uploadFile(selectedProfilePhoto.file)).id
+      : undefined;
     save({
       section: "name",
       firstName: textValue(values, "firstName"),
       middleName: textValue(values, "middleName"),
       lastName: textValue(values, "lastName"),
       preferredName: textValue(values, "preferredName"),
+      profilePictureId,
       ssn: textValue(values, "ssn"),
       dateOfBirth: textValue(values, "dateOfBirth"),
       gender: textValue(values, "gender") as "male" | "female" | "decline",
@@ -94,7 +120,7 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     });
   }
 
-  function submitEmployment(event: FormEvent<HTMLFormElement>) {
+  async function submitEmployment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
 
@@ -114,8 +140,12 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
       return;
     }
 
+    const workAuthorizationDocumentId = workAuthorizationFile
+      ? (await uploadFile(workAuthorizationFile)).id
+      : undefined;
     save({
       section: "employment",
+      workAuthorizationDocumentId,
       workAuthorization: {
         isUsCitizenOrPermanentResident: false,
         residentOrCitizenType: null,
@@ -154,18 +184,38 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     personalDetails,
     workAuthorization,
   } = profile.data;
+  const savedProfilePhoto = profile.data.documents.find(
+    (document) => document.kind === "profile_photo",
+  );
+  const hasWorkAuthorizationDocument = profile.data.documents.some(
+    (document) => document.kind === "work_authorization",
+  );
+  const profilePhoto: ProfilePhoto | undefined = selectedProfilePhoto
+    ? selectedProfilePhoto
+    : savedProfilePhoto && {
+        fileName: savedProfilePhoto.fileName,
+        sourceUrl: fileDownloadUrl(savedProfilePhoto.id),
+      };
 
   return (
     <div className="space-y-4">
       <ProfileSection
         editing={editing === "name"}
-        onCancel={() => setEditing(null)}
+        onCancel={() => cancelEditing("name")}
         onEdit={() => startEditing("name")}
+        pending={updateProfile.isPending}
         onSubmit={submitName}
-        title="Personal information"
+        title="Name"
       >
         {editing === "name" ? (
           <div className="space-y-4">
+            <div>
+              <p className="mb-2 text-sm font-medium">Profile picture</p>
+              <ProfilePhotoPicker
+                onChange={setSelectedProfilePhoto}
+                photo={profilePhoto}
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 defaultValue={name.firstName}
@@ -188,6 +238,13 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
                 defaultValue={name.preferredName}
                 label="Preferred name"
                 name="preferredName"
+              />
+              <Field
+                defaultValue={contact.email}
+                disabled
+                label="Email"
+                name="email"
+                type="email"
               />
               <Field
                 defaultValue={personalDetails.ssn}
@@ -216,34 +273,53 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
                 </select>
               </label>
             </div>
-            <SaveButton pending={updateProfile.isPending} />
           </div>
         ) : (
-          <ProfileDetails
-            values={[
-              [
-                "Name",
-                [name.firstName, name.middleName, name.lastName]
-                  .filter(Boolean)
-                  .join(" "),
-              ],
-              ["Preferred name", name.preferredName || "—"],
-              ["Date of birth", personalDetails.dateOfBirth],
-              [
-                "Gender",
-                personalDetails.gender === "decline"
-                  ? "Prefer not to say"
-                  : personalDetails.gender,
-              ],
-            ]}
-          />
+          <div className="space-y-4">
+            <div>
+              <div className="grid size-16 shrink-0 overflow-hidden rounded-full bg-muted text-muted-foreground">
+                {profilePhoto ? (
+                  <img
+                    alt="Profile photo"
+                    className="size-full object-cover"
+                    src={profilePhoto.sourceUrl}
+                  />
+                ) : (
+                  <UserRound
+                    aria-hidden="true"
+                    className="place-self-center size-6"
+                  />
+                )}
+              </div>
+            </div>
+            <ProfileDetails
+              values={[
+                [
+                  "Name",
+                  [name.firstName, name.middleName, name.lastName]
+                    .filter(Boolean)
+                    .join(" "),
+                ],
+                ["Preferred name", name.preferredName || "—"],
+                ["Email", contact.email],
+                ["Date of birth", personalDetails.dateOfBirth],
+                [
+                  "Gender",
+                  personalDetails.gender === "decline"
+                    ? "Prefer not to say"
+                    : personalDetails.gender,
+                ],
+              ]}
+            />
+          </div>
         )}
       </ProfileSection>
 
       <ProfileSection
         editing={editing === "address"}
-        onCancel={() => setEditing(null)}
+        onCancel={() => cancelEditing("address")}
         onEdit={() => startEditing("address")}
+        pending={updateProfile.isPending}
         onSubmit={submitAddress}
         title="Address"
       >
@@ -280,7 +356,6 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
                 required
               />
             </div>
-            <SaveButton pending={updateProfile.isPending} />
           </div>
         ) : (
           <ProfileDetails
@@ -304,16 +379,14 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
 
       <ProfileSection
         editing={editing === "contact"}
-        onCancel={() => setEditing(null)}
+        onCancel={() => cancelEditing("contact")}
         onEdit={() => startEditing("contact")}
+        pending={updateProfile.isPending}
         onSubmit={submitContact}
-        title="Contact"
+        title="Contact info"
       >
         {editing === "contact" ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Your invitation email cannot be changed.
-            </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 defaultValue={contact.cellPhone}
@@ -327,12 +400,10 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
                 name="workPhone"
               />
             </div>
-            <SaveButton pending={updateProfile.isPending} />
           </div>
         ) : (
           <ProfileDetails
             values={[
-              ["Email", contact.email],
               ["Cell phone", contact.cellPhone],
               ["Work phone", contact.workPhone || "—"],
             ]}
@@ -342,10 +413,11 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
 
       <ProfileSection
         editing={editing === "employment"}
-        onCancel={() => setEditing(null)}
+        onCancel={() => cancelEditing("employment")}
         onEdit={() => startEditing("employment")}
+        pending={updateProfile.isPending}
         onSubmit={submitEmployment}
-        title="Work authorization"
+        title="Employment"
       >
         {editing === "employment" ? (
           <div className="space-y-4 text-sm">
@@ -418,9 +490,26 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
                   required
                   type="date"
                 />
+                <label className="text-sm font-medium sm:col-span-2">
+                  Work-authorization document
+                  <Input
+                    accept="image/*,application/pdf"
+                    className="mt-1"
+                    onChange={(event) =>
+                      setWorkAuthorizationFile(event.target.files?.[0] ?? null)
+                    }
+                    type="file"
+                  />
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    {workAuthorizationFile
+                      ? workAuthorizationFile.name
+                      : hasWorkAuthorizationDocument
+                        ? "A document is already on file. Choose a file to replace it."
+                        : "Required when changing to a non-U.S. work authorization."}
+                  </span>
+                </label>
               </div>
             )}
-            <SaveButton pending={updateProfile.isPending} />
           </div>
         ) : (
           <ProfileDetails
@@ -451,10 +540,11 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
 
       <ProfileSection
         editing={editing === "emergencyContact"}
-        onCancel={() => setEditing(null)}
+        onCancel={() => cancelEditing("emergencyContact")}
         onEdit={() => startEditing("emergencyContact")}
+        pending={updateProfile.isPending}
         onSubmit={submitEmergencyContacts}
-        title="Emergency contacts"
+        title="Emergency contact"
       >
         {editing === "emergencyContact" ? (
           <div className="space-y-5">
@@ -510,7 +600,6 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
               >
                 Add contact
               </Button>
-              <SaveButton pending={updateProfile.isPending} />
             </div>
           </div>
         ) : (
@@ -529,6 +618,50 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
           </div>
         )}
       </ProfileSection>
+
+      <section className="rounded-lg border bg-card p-5 text-card-foreground sm:p-6">
+        <h2 className="mb-4 font-semibold">Documents</h2>
+        <div className="space-y-3">
+          {profile.data.documents
+            .filter((document) => document.kind !== "profile_photo")
+            .map((document) => (
+              <div
+                className="flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-sm"
+                key={document.id}
+              >
+                <span className="min-w-0 truncate font-medium">
+                  {document.kind === "drivers_license"
+                    ? "Driver’s license"
+                    : "Work authorization"}
+                  : {document.fileName}
+                </span>
+                <span className="flex shrink-0 gap-3">
+                  <a
+                    className="text-primary hover:underline"
+                    href={filePreviewUrl(document.id)}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Preview
+                  </a>
+                  <a
+                    className="text-primary hover:underline"
+                    href={fileDownloadUrl(document.id)}
+                  >
+                    Download
+                  </a>
+                </span>
+              </div>
+            ))}
+          {!profile.data.documents.some(
+            (document) => document.kind !== "profile_photo",
+          ) && (
+            <p className="text-sm text-muted-foreground">
+              No supporting documents uploaded.
+            </p>
+          )}
+        </div>
+      </section>
 
       {updateProfile.isError && (
         <p className="text-sm text-destructive" role="alert">

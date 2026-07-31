@@ -4,7 +4,11 @@ import multer, { MulterError } from "multer";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { uploadedFileSchema } from "@emp-mgmt/shared";
+import {
+  MAX_UPLOAD_SIZE_BYTES,
+  MAX_UPLOAD_SIZE_LABEL,
+  uploadedFileSchema,
+} from "@emp-mgmt/shared";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { FileMetadataModel } from "../models/FileMetadata.js";
 
@@ -21,7 +25,7 @@ const storage = multer.diskStorage({
 // Accept only image/* or application/pdf.
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: MAX_UPLOAD_SIZE_BYTES },
   fileFilter: (_req, file, cb) => {
     const ok =
       file.mimetype.startsWith("image/") || file.mimetype === "application/pdf";
@@ -45,7 +49,7 @@ filesRouter.post("/files", requireAuth, (req, res, next) => {
       const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
       const message =
         err.code === "LIMIT_FILE_SIZE"
-          ? "File exceeds 10MB limit"
+          ? `File exceeds ${MAX_UPLOAD_SIZE_LABEL} limit`
           : err.message;
       res.status(status).json({ error: message });
       return;

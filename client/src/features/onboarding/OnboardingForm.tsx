@@ -23,18 +23,20 @@ import { FormProvider, useForm } from "react-hook-form";
 
 type OnboardingFormProps = {
   application?: OnboardingApplication;
+  email: string;
   isRejected: boolean;
 };
 
 export function OnboardingForm({
   application,
+  email,
   isRejected,
 }: OnboardingFormProps) {
   const [activeStep, setActiveStep] = useState(0);
   const [completedThrough, setCompletedThrough] = useState(-1);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const form = useForm<OnboardingFormData>({
-    defaultValues: onboardingFormValues(application?.data),
+    defaultValues: onboardingFormValues(application?.data, email),
     mode: "onBlur",
     reValidateMode: "onBlur",
     resolver: zodResolver(onboardingSchema),
@@ -156,7 +158,13 @@ export function OnboardingForm({
               Back
             </Button>
             {activeStep < onboardingSteps.length - 1 ? (
-              <Button onClick={continueToNextStep} type="button">
+              <Button
+                onClick={(event) => {
+                  event.preventDefault();
+                  void continueToNextStep();
+                }}
+                type="button"
+              >
                 Continue
               </Button>
             ) : (

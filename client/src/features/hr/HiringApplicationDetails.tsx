@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 
-import type { OnboardingApplication } from "@emp-mgmt/shared";
+import type { EmployeeProfile, OnboardingApplication } from "@emp-mgmt/shared";
 
-import { fileDownloadUrl } from "@/lib/files";
+import { fileDownloadUrl, filePreviewUrl } from "@/lib/files";
 
 export function HiringApplicationDetails({
-  application,
+  profile,
 }: {
-  application: OnboardingApplication;
+  profile: OnboardingApplication | EmployeeProfile;
 }) {
   const {
     address,
@@ -18,7 +18,7 @@ export function HiringApplicationDetails({
     personalDetails,
     reference,
     workAuthorization,
-  } = application.data;
+  } = profile.data;
   const fullName = [name.firstName, name.middleName, name.lastName]
     .filter(Boolean)
     .join(" ");
@@ -136,12 +136,22 @@ export function HiringApplicationDetails({
                 key={document.id}
               >
                 <span>{document.fileName}</span>
-                <a
-                  className="shrink-0 text-primary underline-offset-4 hover:underline"
-                  href={fileDownloadUrl(document.id)}
-                >
-                  Download
-                </a>
+                <span className="flex shrink-0 gap-3">
+                  <a
+                    className="text-primary underline-offset-4 hover:underline"
+                    href={filePreviewUrl(document.id)}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Preview
+                  </a>
+                  <a
+                    className="text-primary underline-offset-4 hover:underline"
+                    href={fileDownloadUrl(document.id)}
+                  >
+                    Download
+                  </a>
+                </span>
               </li>
             ))}
           </ul>

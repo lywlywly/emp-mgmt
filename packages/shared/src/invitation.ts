@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-export const invitationStatusSchema = z.enum(["pending", "submitted"]);
+export const invitationStatusSchema = z.enum([
+  "pending",
+  "registered",
+  "submitted",
+  "expired",
+]);
 
 export const invitationGenerateInputSchema = z.object({
   email: z.email(),

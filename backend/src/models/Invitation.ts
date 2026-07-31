@@ -9,7 +9,7 @@ const invitationSchema = new Schema(
     expiresAt: { type: Date, required: true },
     status: {
       type: String,
-      enum: ["pending", "submitted"],
+      enum: ["pending", "registered", "submitted", "expired"],
       default: "pending",
     },
     user: { type: Schema.Types.ObjectId, ref: "User" },

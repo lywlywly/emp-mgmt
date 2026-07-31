@@ -43,6 +43,7 @@ export const employeeProfileUpdateSectionInputSchema = z.discriminatedUnion(
     z.object({
       section: z.literal("employment"),
       workAuthorization: workAuthorizationSchema,
+      workAuthorizationDocumentId: z.string().min(1).optional(),
     }),
     z.object({
       section: z.literal("emergencyContact"),

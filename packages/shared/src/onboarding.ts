@@ -6,13 +6,27 @@ export { uploadedFileSchema } from "./files.js";
 const requiredText = (label: string) =>
   z.string().trim().min(1, `${label} is required.`);
 const optionalText = z.string().trim();
-const phoneNumberSchema = z
+export const phoneNumberSchema = z
   .string()
   .regex(/^\d{3}-\d{3}-\d{4}$/, "Enter a valid U.S. phone number.");
-const optionalPhoneNumberSchema = z.union([z.literal(""), phoneNumberSchema]);
+export const optionalPhoneNumberSchema = z.union([
+  z.literal(""),
+  phoneNumberSchema,
+]);
 const dateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date.");
+
+export const personalDetailsSchema = z.object({
+  ssn: z
+    .string()
+    .trim()
+    .regex(/^\d{3}-?\d{2}-?\d{4}$/, "Enter a valid SSN."),
+  dateOfBirth: dateSchema,
+  gender: z.enum(["male", "female", "decline"], {
+    error: "Select a gender option.",
+  }),
+});
 
 export const onboardingStatusSchema = z.enum([
   "pending",
@@ -102,24 +116,32 @@ export const referenceContactSchema = z
   });
 
 export const workAuthorizationSchema = z
-  .discriminatedUnion("isUsCitizenOrPermanentResident", [
-    z.object({
-      isUsCitizenOrPermanentResident: z.literal(true),
-      residentOrCitizenType: z.enum(["green_card", "citizen"]),
-      type: z.null(),
-      otherType: z.literal(""),
-      startDate: z.literal(""),
-      endDate: z.literal(""),
-    }),
-    z.object({
-      isUsCitizenOrPermanentResident: z.literal(false),
-      residentOrCitizenType: z.null(),
-      type: z.enum(["h1b", "l2", "f1", "h4", "other"]),
-      otherType: optionalText,
-      startDate: dateSchema,
-      endDate: dateSchema,
-    }),
-  ])
+  .discriminatedUnion(
+    "isUsCitizenOrPermanentResident",
+    [
+      z.object({
+        isUsCitizenOrPermanentResident: z.literal(true),
+        residentOrCitizenType: z.enum(["green_card", "citizen"], {
+          error: "Select Green Card or Citizen.",
+        }),
+        type: z.null(),
+        otherType: z.literal(""),
+        startDate: z.literal(""),
+        endDate: z.literal(""),
+      }),
+      z.object({
+        isUsCitizenOrPermanentResident: z.literal(false),
+        residentOrCitizenType: z.null(),
+        type: z.enum(["h1b", "l2", "f1", "h4", "other"], {
+          error: "Select a work-authorization type.",
+        }),
+        otherType: optionalText,
+        startDate: dateSchema,
+        endDate: dateSchema,
+      }),
+    ],
+    { error: "Select whether you are a U.S. citizen or permanent resident." },
+  )
   .superRefine((authorization, context) => {
     if (authorization.isUsCitizenOrPermanentResident) return;
 
@@ -146,14 +168,7 @@ const onboardingSubmissionBaseSchema = z.object({
     cellPhone: phoneNumberSchema,
     workPhone: optionalPhoneNumberSchema,
   }),
-  personalDetails: z.object({
-    ssn: z
-      .string()
-      .trim()
-      .regex(/^\d{3}-?\d{2}-?\d{4}$/, "Enter a valid SSN."),
-    dateOfBirth: dateSchema,
-    gender: z.enum(["male", "female", "decline"]),
-  }),
+  personalDetails: personalDetailsSchema,
   workAuthorization: workAuthorizationSchema,
   reference: referenceContactSchema.optional(),
   emergencyContacts: z
@@ -162,7 +177,7 @@ const onboardingSubmissionBaseSchema = z.object({
   documents: z.array(onboardingDocumentSchema),
 });
 
-function enforceDocumentRules<
+export function enforceWorkAuthorizationDocumentRule<
   T extends {
     documents: { kind: z.infer<typeof onboardingDocumentKindSchema> }[];
     workAuthorization: { isUsCitizenOrPermanentResident: boolean };
@@ -183,7 +198,9 @@ function enforceDocumentRules<
 }
 
 export const onboardingSubmitInputSchema =
-  onboardingSubmissionBaseSchema.superRefine(enforceDocumentRules);
+  onboardingSubmissionBaseSchema.superRefine(
+    enforceWorkAuthorizationDocumentRule,
+  );
 
 export const onboardingApplicationDataSchema = onboardingSubmissionBaseSchema
   .extend({
@@ -194,7 +211,7 @@ export const onboardingApplicationDataSchema = onboardingSubmissionBaseSchema
     }),
     reference: referenceContactSchema.nullable(),
   })
-  .superRefine(enforceDocumentRules);
+  .superRefine(enforceWorkAuthorizationDocumentRule);
 
 export const onboardingApplicationSchema = z.object({
   id: z.string(),

@@ -22,6 +22,7 @@ import {
 } from "../../models/OnboardingApplication.js";
 import { OptWorkflowModel } from "../../models/OptWorkflow.js";
 import { UserModel } from "../../models/User.js";
+import { InvitationModel } from "../../models/Invitation.js";
 import { sendEmail } from "../../services/email.js";
 import { presentEmployeeProfile } from "../presenters.js";
 
@@ -245,7 +246,7 @@ export const hrRouter = router({
       return profiles.map(toSummary);
     }),
 
-  // Visa Status — In Progress: OPT (F1) employees not yet fully approved.
+  // Visa Status — In Progress: invitations and incomplete OPT workflows.
   visaInProgress: hrProcedure
     .output(visaProgressItemSchema.array())
     .query(async () => {
@@ -263,7 +264,9 @@ export const hrRouter = router({
         const step = ("step" in next ? next.step : null) ?? null;
         rows.push({
           userId: String(app.user),
+          invitationId: null,
           fullName: fullName(app),
+          email: app.data.contact.email,
           workAuthorization: waView(app),
           daysRemaining: daysRemainingOf(app),
           nextStep: next.message,
@@ -278,6 +281,37 @@ export const hrRouter = router({
           canNotify: next.waitingOn === "employee",
         });
       }
+      const invitations = await InvitationModel.find({
+        $or: [
+          { status: "registered" },
+          { status: "pending", expiresAt: { $gt: new Date() } },
+        ],
+      }).lean();
+      rows.push(
+        ...invitations.map((invitation) => ({
+          userId:
+            invitation.status === "registered" && invitation.user
+              ? String(invitation.user)
+              : null,
+          invitationId: String(invitation._id),
+          fullName: invitation.name,
+          email: invitation.email,
+          workAuthorization: {
+            title: null,
+            startDate: null,
+            endDate: null,
+          },
+          daysRemaining: null,
+          nextStep:
+            invitation.status === "registered"
+              ? "Submit onboarding application"
+              : "Complete registration",
+          waitingOn: "employee" as const,
+          step: null,
+          pendingFile: null,
+          canNotify: true,
+        })),
+      );
       return rows;
     }),
 
@@ -306,8 +340,10 @@ export const hrRouter = router({
         return {
           userId: String(app.user),
           fullName: fullName(app),
+          email: app.data.contact.email,
           workAuthorization: waView(app),
           daysRemaining: daysRemainingOf(app),
+          nextStep: inferNextStep(app.status ?? null, opt).message,
           approvedDocuments,
         };
       });
@@ -318,28 +354,45 @@ export const hrRouter = router({
     .input(sendNotificationInputSchema)
     .output(sendNotificationOutputSchema)
     .mutation(async ({ input }) => {
-      const user = await UserModel.findById(input.userId).lean();
-      if (!user)
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      const recipient =
+        input.target === "employee"
+          ? await UserModel.findById(input.userId).lean()
+          : await InvitationModel.findById(input.invitationId).lean();
+      if (!recipient) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Recipient not found",
+        });
+      }
 
-      const app = await OnboardingApplicationModel.findOne({
-        user: input.userId,
-      }).lean();
-      const wf = await OptWorkflowModel.findOne({ user: input.userId }).lean();
-      const next = inferNextStep(
-        app?.status ?? null,
-        app ? optStateOf(wf, app) : null,
-      );
+      const app =
+        input.target === "employee"
+          ? await OnboardingApplicationModel.findOne({
+              user: input.userId,
+            }).lean()
+          : null;
+      const wf =
+        input.target === "employee"
+          ? await OptWorkflowModel.findOne({ user: input.userId }).lean()
+          : null;
+      const next = app
+        ? inferNextStep(app.status ?? null, optStateOf(wf, app))
+        : {
+            message:
+              input.target === "invitation" && recipient.status === "pending"
+                ? "Complete registration"
+                : "Submit onboarding application",
+          };
 
       const text = input.message?.trim()
         ? input.message
         : `Hello,\n\nThis is a reminder about your onboarding process.\nNext step: ${next.message}.\n`;
 
       await sendEmail({
-        to: user.email,
+        to: recipient.email,
         subject: "Action required on your onboarding",
         text,
       });
-      return { ok: true, to: user.email, nextStep: next.message };
+      return { ok: true, to: recipient.email, nextStep: next.message };
     }),
 });

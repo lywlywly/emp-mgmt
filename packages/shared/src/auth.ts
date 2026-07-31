@@ -5,6 +5,7 @@ export const userRoleSchema = z.enum(["employee", "hr"]);
 export const sessionUserSchema = z.object({
   id: z.string(),
   username: z.string(),
+  email: z.email(),
   role: userRoleSchema,
 });
 
