@@ -5,12 +5,18 @@ import {
   ProfileSection,
   SaveButton,
 } from "@/features/profile/ProfilePrimitives";
+import {
+  ProfilePhotoPicker,
+  type ProfilePhoto,
+} from "@/features/onboarding/ProfilePhotoPicker";
+import { fileDownloadUrl, uploadFile } from "@/lib/files";
 import { queryClient, trpc } from "@/lib/trpc";
 import type {
   EmployeeProfile,
   EmployeeProfileUpdateSectionInput,
 } from "@emp-mgmt/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 type Section =
@@ -22,6 +28,12 @@ function textValue(values: FormData, name: string) {
 
 function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
   const [editing, setEditing] = useState<Section | null>(null);
+  const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<{
+    file: File;
+    fileName: string;
+    previewUrl: string;
+    sourceUrl: string;
+  } | null>(null);
   const [isUsCitizenOrPermanentResident, setIsUsCitizenOrPermanentResident] =
     useState(profile.data.workAuthorization.isUsCitizenOrPermanentResident);
   const [emergencyContactCount, setEmergencyContactCount] = useState(
@@ -31,6 +43,7 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     trpc.profile.updateSection.mutationOptions({
       onSuccess: () => {
         setEditing(null);
+        setSelectedProfilePhoto(null);
         void queryClient.invalidateQueries({
           queryKey: trpc.profile.getMine.queryKey(),
         });
@@ -54,15 +67,19 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     updateProfile.mutate(input);
   }
 
-  function submitName(event: FormEvent<HTMLFormElement>) {
+  async function submitName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
+    const profilePictureId = selectedProfilePhoto
+      ? (await uploadFile(selectedProfilePhoto.file)).id
+      : undefined;
     save({
       section: "name",
       firstName: textValue(values, "firstName"),
       middleName: textValue(values, "middleName"),
       lastName: textValue(values, "lastName"),
       preferredName: textValue(values, "preferredName"),
+      profilePictureId,
       ssn: textValue(values, "ssn"),
       dateOfBirth: textValue(values, "dateOfBirth"),
       gender: textValue(values, "gender") as "male" | "female" | "decline",
@@ -154,6 +171,15 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     personalDetails,
     workAuthorization,
   } = profile.data;
+  const savedProfilePhoto = profile.data.documents.find(
+    (document) => document.kind === "profile_photo",
+  );
+  const profilePhoto: ProfilePhoto | undefined = selectedProfilePhoto
+    ? selectedProfilePhoto
+    : savedProfilePhoto && {
+        fileName: savedProfilePhoto.fileName,
+        sourceUrl: fileDownloadUrl(savedProfilePhoto.id),
+      };
 
   return (
     <div className="space-y-4">
@@ -166,6 +192,13 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
       >
         {editing === "name" ? (
           <div className="space-y-4">
+            <div>
+              <p className="mb-2 text-sm font-medium">Profile picture</p>
+              <ProfilePhotoPicker
+                onChange={setSelectedProfilePhoto}
+                photo={profilePhoto}
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 defaultValue={name.firstName}
@@ -219,24 +252,42 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
             <SaveButton pending={updateProfile.isPending} />
           </div>
         ) : (
-          <ProfileDetails
-            values={[
-              [
-                "Name",
-                [name.firstName, name.middleName, name.lastName]
-                  .filter(Boolean)
-                  .join(" "),
-              ],
-              ["Preferred name", name.preferredName || "—"],
-              ["Date of birth", personalDetails.dateOfBirth],
-              [
-                "Gender",
-                personalDetails.gender === "decline"
-                  ? "Prefer not to say"
-                  : personalDetails.gender,
-              ],
-            ]}
-          />
+          <div className="space-y-4">
+            <div>
+              <div className="grid size-16 shrink-0 overflow-hidden rounded-full bg-muted text-muted-foreground">
+                {profilePhoto ? (
+                  <img
+                    alt="Profile photo"
+                    className="size-full object-cover"
+                    src={profilePhoto.sourceUrl}
+                  />
+                ) : (
+                  <UserRound
+                    aria-hidden="true"
+                    className="place-self-center size-6"
+                  />
+                )}
+              </div>
+            </div>
+            <ProfileDetails
+              values={[
+                [
+                  "Name",
+                  [name.firstName, name.middleName, name.lastName]
+                    .filter(Boolean)
+                    .join(" "),
+                ],
+                ["Preferred name", name.preferredName || "—"],
+                ["Date of birth", personalDetails.dateOfBirth],
+                [
+                  "Gender",
+                  personalDetails.gender === "decline"
+                    ? "Prefer not to say"
+                    : personalDetails.gender,
+                ],
+              ]}
+            />
+          </div>
         )}
       </ProfileSection>
 
