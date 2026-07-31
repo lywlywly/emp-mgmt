@@ -10,6 +10,15 @@ import { sendEmail } from "../../services/email.js";
 
 const TOKEN_TTL_MS = 3 * 60 * 60 * 1000; // token is valid for 3 hours
 
+function invitationStatus(invitation: {
+  status: "pending" | "registered" | "submitted" | "expired";
+  expiresAt: Date;
+}) {
+  return invitation.status === "pending" && invitation.expiresAt <= new Date()
+    ? "expired"
+    : invitation.status;
+}
+
 function registrationLink(token: string): string {
   const base = process.env.FRONTEND_URL ?? "http://localhost:5173";
   return `${base}/register?token=${token}`;
@@ -62,7 +71,7 @@ export const invitationRouter = router({
       email: inv.email,
       name: inv.name ?? "",
       link: registrationLink(inv.token),
-      status: inv.status,
+      status: invitationStatus(inv),
     }));
   }),
 });

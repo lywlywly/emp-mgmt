@@ -15,7 +15,7 @@ export const authRouter = router({
   register: publicProcedure
     .input(authRegisterInputSchema)
     .output(sessionUserSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const invitation = await InvitationModel.findOne({ token: input.token });
       if (!invitation) {
         throw new TRPCError({
@@ -56,11 +56,14 @@ export const authRouter = router({
         // role defaults to "employee"
       });
 
-      // Link the invitation to the new account. Its pending status changes when
-      // the employee submits onboarding; the linked user is also the single-use
-      // guard above.
+      // Link the invitation to the new account. It becomes submitted only after
+      // the employee submits onboarding.
       invitation.user = user._id;
+      invitation.status = "registered";
       await invitation.save();
+
+      ctx.req.session.userId = String(user._id);
+      ctx.req.session.role = "employee";
 
       return { id: String(user._id), username: user.username, role: user.role };
     }),

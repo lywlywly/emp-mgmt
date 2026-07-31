@@ -246,7 +246,7 @@ export const hrRouter = router({
       return profiles.map(toSummary);
     }),
 
-  // Visa Status — In Progress: pending invitations and incomplete OPT workflows.
+  // Visa Status — In Progress: invitations and incomplete OPT workflows.
   visaInProgress: hrProcedure
     .output(visaProgressItemSchema.array())
     .query(async () => {
@@ -282,11 +282,17 @@ export const hrRouter = router({
         });
       }
       const invitations = await InvitationModel.find({
-        status: "pending",
+        $or: [
+          { status: "registered" },
+          { status: "pending", expiresAt: { $gt: new Date() } },
+        ],
       }).lean();
       rows.push(
         ...invitations.map((invitation) => ({
-          userId: null,
+          userId:
+            invitation.status === "registered" && invitation.user
+              ? String(invitation.user)
+              : null,
           invitationId: String(invitation._id),
           fullName: invitation.name,
           email: invitation.email,
@@ -296,7 +302,10 @@ export const hrRouter = router({
             endDate: null,
           },
           daysRemaining: null,
-          nextStep: "Submit onboarding application",
+          nextStep:
+            invitation.status === "registered"
+              ? "Submit onboarding application"
+              : "Complete registration",
           waitingOn: "employee" as const,
           step: null,
           pendingFile: null,
@@ -367,7 +376,12 @@ export const hrRouter = router({
           : null;
       const next = app
         ? inferNextStep(app.status ?? null, optStateOf(wf, app))
-        : { message: "Submit onboarding application" };
+        : {
+            message:
+              input.target === "invitation" && recipient.status === "pending"
+                ? "Complete registration"
+                : "Submit onboarding application",
+          };
 
       const text = input.message?.trim()
         ? input.message

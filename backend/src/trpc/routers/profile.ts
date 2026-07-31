@@ -66,6 +66,32 @@ export const profileRouter = router({
           profile.set("data.contact.workPhone", input.workPhone);
           break;
         case "employment":
+          if (input.workAuthorizationDocumentId) {
+            await assertFilesOwnedBy(ctx.userId, [
+              input.workAuthorizationDocumentId,
+            ]);
+            profile.set("data.documents", [
+              ...profile.data.documents.filter(
+                (document) => document.kind !== "work_authorization",
+              ),
+              {
+                kind: "work_authorization",
+                file: input.workAuthorizationDocumentId,
+              },
+            ]);
+          }
+          if (
+            !input.workAuthorization.isUsCitizenOrPermanentResident &&
+            !input.workAuthorizationDocumentId &&
+            !profile.data.documents.some(
+              (document) => document.kind === "work_authorization",
+            )
+          ) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Upload a work-authorization document.",
+            });
+          }
           profile.set("data.workAuthorization", input.workAuthorization);
           break;
         case "emergencyContact":

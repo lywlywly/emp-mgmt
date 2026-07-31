@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ProfileDetails,
   ProfileField as Field,
@@ -33,6 +34,8 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     previewUrl: string;
     sourceUrl: string;
   } | null>(null);
+  const [workAuthorizationFile, setWorkAuthorizationFile] =
+    useState<File | null>(null);
   const [isUsCitizenOrPermanentResident, setIsUsCitizenOrPermanentResident] =
     useState(profile.data.workAuthorization.isUsCitizenOrPermanentResident);
   const [emergencyContactCount, setEmergencyContactCount] = useState(
@@ -55,6 +58,7 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
       setIsUsCitizenOrPermanentResident(
         profile.data.workAuthorization.isUsCitizenOrPermanentResident,
       );
+      setWorkAuthorizationFile(null);
     }
     if (section === "emergencyContact") {
       setEmergencyContactCount(profile.data.emergencyContacts.length);
@@ -116,7 +120,7 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
     });
   }
 
-  function submitEmployment(event: FormEvent<HTMLFormElement>) {
+  async function submitEmployment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
 
@@ -136,8 +140,12 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
       return;
     }
 
+    const workAuthorizationDocumentId = workAuthorizationFile
+      ? (await uploadFile(workAuthorizationFile)).id
+      : undefined;
     save({
       section: "employment",
+      workAuthorizationDocumentId,
       workAuthorization: {
         isUsCitizenOrPermanentResident: false,
         residentOrCitizenType: null,
@@ -178,6 +186,9 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
   } = profile.data;
   const savedProfilePhoto = profile.data.documents.find(
     (document) => document.kind === "profile_photo",
+  );
+  const hasWorkAuthorizationDocument = profile.data.documents.some(
+    (document) => document.kind === "work_authorization",
   );
   const profilePhoto: ProfilePhoto | undefined = selectedProfilePhoto
     ? selectedProfilePhoto
@@ -479,6 +490,24 @@ function ProfileEditor({ profile }: { profile: EmployeeProfile }) {
                   required
                   type="date"
                 />
+                <label className="text-sm font-medium sm:col-span-2">
+                  Work-authorization document
+                  <Input
+                    accept="image/*,application/pdf"
+                    className="mt-1"
+                    onChange={(event) =>
+                      setWorkAuthorizationFile(event.target.files?.[0] ?? null)
+                    }
+                    type="file"
+                  />
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    {workAuthorizationFile
+                      ? workAuthorizationFile.name
+                      : hasWorkAuthorizationDocument
+                        ? "A document is already on file. Choose a file to replace it."
+                        : "Required when changing to a non-U.S. work authorization."}
+                  </span>
+                </label>
               </div>
             )}
           </div>
