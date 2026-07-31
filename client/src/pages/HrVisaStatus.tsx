@@ -299,6 +299,9 @@ export default function HrVisaStatus() {
                   key={workflow.userId}
                 >
                   <h2 className="font-semibold">{workflow.fullName}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {workflow.email}
+                  </p>
                   <WorkAuthorization
                     workAuthorization={workflow.workAuthorization}
                   />

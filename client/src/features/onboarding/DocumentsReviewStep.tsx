@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { onboardingDefaultValues } from "@/features/onboarding/form-data";
 import { StepHeading } from "@/features/onboarding/StepHeading";
 import { RequiredIndicator } from "@/features/onboarding/RequiredIndicator";
+import { filePreviewUrl } from "@/lib/files";
 import type {
   OnboardingDocumentKind,
   OnboardingFormData,
@@ -47,7 +47,6 @@ export function DocumentsReviewStep() {
   const form = useFormContext<OnboardingFormData>();
   const values = useWatch({
     control: form.control,
-    defaultValue: onboardingDefaultValues,
   }) as OnboardingFormData;
 
   function updateDocument(
@@ -55,6 +54,12 @@ export function DocumentsReviewStep() {
     event: ChangeEvent<HTMLInputElement>,
   ) {
     const file = event.target.files?.[0];
+    const existingDocument = form
+      .getValues("documents")
+      .find((document) => document.kind === kind);
+    if (existingDocument?.previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(existingDocument.previewUrl);
+    }
     const remainingDocuments = form
       .getValues("documents")
       .filter((document) => document.kind !== kind);
@@ -70,6 +75,7 @@ export function DocumentsReviewStep() {
               file,
               mimeType: file.type,
               size: file.size,
+              previewUrl: URL.createObjectURL(file),
             },
           ]
         : remainingDocuments,
@@ -77,9 +83,8 @@ export function DocumentsReviewStep() {
     );
   }
 
-  function documentName(kind: OnboardingDocumentKind) {
-    return values.documents.find((document) => document.kind === kind)
-      ?.fileName;
+  function documentFor(kind: OnboardingDocumentKind) {
+    return values.documents.find((document) => document.kind === kind);
   }
 
   const citizenOrResident =
@@ -112,23 +117,49 @@ export function DocumentsReviewStep() {
         description="Choose your supporting files, then review the information entered so far."
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        {documentFields.map((documentField) => (
-          <Field key={documentField.kind}>
-            <FieldLabel htmlFor={documentField.kind}>
-              {documentField.label}
-              {documentField.required && <RequiredIndicator />}
-            </FieldLabel>
-            <Input
-              accept={documentField.accept}
-              id={documentField.kind}
-              onChange={(event) => updateDocument(documentField.kind, event)}
-              type="file"
-            />
-            <FieldDescription>
-              {documentName(documentField.kind) ?? "No file selected"}
-            </FieldDescription>
-          </Field>
-        ))}
+        {documentFields.map((documentField) => {
+          const document = documentFor(documentField.kind);
+          const previewUrl =
+            document?.previewUrl ??
+            document?.sourceUrl ??
+            (document?.id ? filePreviewUrl(document.id) : undefined);
+
+          return (
+            <Field key={documentField.kind}>
+              <FieldLabel htmlFor={documentField.kind}>
+                {documentField.label}
+                {documentField.required && <RequiredIndicator />}
+              </FieldLabel>
+              <Input
+                accept={documentField.accept}
+                id={documentField.kind}
+                onChange={(event) =>
+                  updateDocument(documentField.kind, event)
+                }
+                type="file"
+              />
+              <FieldDescription>
+                {document ? (
+                  <span className="flex items-center gap-2">
+                    {document.fileName}
+                    {previewUrl && (
+                      <a
+                        className="text-primary underline underline-offset-4"
+                        href={previewUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Preview
+                      </a>
+                    )}
+                  </span>
+                ) : (
+                  "No file selected"
+                )}
+              </FieldDescription>
+            </Field>
+          );
+        })}
       </div>
       <FieldError errors={[form.formState.errors.documents]} />
       <Separator />

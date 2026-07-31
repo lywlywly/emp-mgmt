@@ -142,6 +142,9 @@ export function PersonalInformationStep() {
               render={({ field }) => (
                 <Select
                   modal={false}
+                  onOpenChange={(open) => {
+                    if (!open) void form.trigger("address.state");
+                  }}
                   onValueChange={(value) => {
                     field.onChange(value ?? "");
                     void form.trigger("address.state");
@@ -235,11 +238,14 @@ export function PersonalInformationStep() {
               render={({ field }) => (
                 <Select
                   modal={false}
+                  onOpenChange={(open) => {
+                    if (!open) void form.trigger("personalDetails.gender");
+                  }}
                   onValueChange={(value) => {
                     field.onChange(value);
                     void form.trigger("personalDetails.gender");
                   }}
-                  value={field.value}
+                  value={field.value ?? null}
                 >
                   <SelectTrigger className="w-full min-w-0">
                     <SelectValue

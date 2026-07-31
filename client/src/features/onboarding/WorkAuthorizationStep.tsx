@@ -49,12 +49,28 @@ export function WorkAuthorizationStep() {
             </FieldLegend>
             <RadioGroup
               onValueChange={(value) => {
-                field.onChange(value === "yes");
+                const isResidentOrCitizen = value === "yes";
+
+                field.onChange(isResidentOrCitizen);
+                form.setValue(
+                  "workAuthorization.residentOrCitizenType",
+                  null,
+                );
+                form.setValue("workAuthorization.type", null);
+                form.setValue("workAuthorization.otherType", "");
+                form.setValue("workAuthorization.startDate", "");
+                form.setValue("workAuthorization.endDate", "");
                 void form.trigger(
                   "workAuthorization.isUsCitizenOrPermanentResident",
                 );
               }}
-              value={field.value === null ? null : field.value ? "yes" : "no"}
+              value={
+                field.value === true
+                  ? "yes"
+                  : field.value === false
+                    ? "no"
+                    : null
+              }
             >
               <Field orientation="horizontal">
                 <RadioGroupItem id="citizen-yes" value="yes" />
@@ -86,11 +102,17 @@ export function WorkAuthorizationStep() {
               </FieldLabel>
               <Select
                 modal={false}
+                onOpenChange={(open) => {
+                  if (!open)
+                    void form.trigger(
+                      "workAuthorization.residentOrCitizenType",
+                    );
+                }}
                 onValueChange={(value) => {
                   field.onChange(value);
                   void form.trigger("workAuthorization.residentOrCitizenType");
                 }}
-                value={field.value}
+                value={field.value ?? null}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a status">
@@ -125,11 +147,19 @@ export function WorkAuthorizationStep() {
                 </FieldLabel>
                 <Select
                   modal={false}
+                  onOpenChange={(open) => {
+                    if (!open) void form.trigger("workAuthorization.type");
+                  }}
                   onValueChange={(value) => {
+                    form.setValue(
+                      "workAuthorization.residentOrCitizenType",
+                      null,
+                    );
+                    form.setValue("workAuthorization.otherType", "");
                     field.onChange(value);
                     void form.trigger("workAuthorization.type");
                   }}
-                  value={field.value}
+                  value={field.value ?? null}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a type" />

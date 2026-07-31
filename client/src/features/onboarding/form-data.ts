@@ -1,6 +1,6 @@
 import type { EmergencyContact, OnboardingFormData } from "@/lib/onboarding";
 import type { OnboardingApplicationData } from "@emp-mgmt/shared";
-import type { FieldPath } from "react-hook-form";
+import type { DefaultValues, FieldPath } from "react-hook-form";
 
 export const onboardingSteps: {
   label: string;
@@ -24,7 +24,7 @@ export const emptyContact = (): EmergencyContact => ({
   relationship: "",
 });
 
-export const onboardingDefaultValues: OnboardingFormData = {
+export const onboardingDefaultValues: DefaultValues<OnboardingFormData> = {
   name: {
     firstName: "",
     middleName: "",
@@ -39,23 +39,15 @@ export const onboardingDefaultValues: OnboardingFormData = {
     zipCode: "",
   },
   contact: {
-    email: "jordan.lee@example.com",
+    email: "",
     cellPhone: "",
     workPhone: "",
   },
   personalDetails: {
     ssn: "",
     dateOfBirth: "",
-    gender: null,
   },
-  workAuthorization: {
-    isUsCitizenOrPermanentResident: null,
-    residentOrCitizenType: null,
-    type: null,
-    otherType: "",
-    startDate: "",
-    endDate: "",
-  },
+  workAuthorization: {},
   reference: emptyContact(),
   emergencyContacts: [emptyContact()],
   documents: [],
@@ -63,8 +55,14 @@ export const onboardingDefaultValues: OnboardingFormData = {
 
 export function onboardingFormValues(
   application?: OnboardingApplicationData,
-): OnboardingFormData {
-  if (!application) return onboardingDefaultValues;
+  email?: string,
+): DefaultValues<OnboardingFormData> {
+  if (!application) {
+    return {
+      ...onboardingDefaultValues,
+      contact: { ...onboardingDefaultValues.contact, email: email ?? "" },
+    };
+  }
 
   return {
     ...application,

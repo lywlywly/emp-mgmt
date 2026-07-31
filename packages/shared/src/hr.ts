@@ -45,6 +45,7 @@ export const visaProgressItemSchema = z.object({
 export const visaAllItemSchema = z.object({
   userId: z.string(),
   fullName: z.string(),
+  email: z.email(),
   workAuthorization: workAuthorizationViewSchema,
   daysRemaining: z.number().int().nullable(),
   nextStep: z.string(),

@@ -340,6 +340,7 @@ export const hrRouter = router({
         return {
           userId: String(app.user),
           fullName: fullName(app),
+          email: app.data.contact.email,
           workAuthorization: waView(app),
           daysRemaining: daysRemainingOf(app),
           nextStep: inferNextStep(app.status ?? null, opt).message,

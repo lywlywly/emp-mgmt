@@ -20,12 +20,7 @@ export type OnboardingDocument = Omit<SharedDocument, "id"> & {
 export type PersonName = OnboardingApplicationData["name"];
 export type Address = OnboardingApplicationData["address"];
 export type ContactDetails = OnboardingApplicationData["contact"];
-export type PersonalDetails = Omit<
-  OnboardingApplicationData["personalDetails"],
-  "gender"
-> & {
-  gender: OnboardingApplicationData["personalDetails"]["gender"] | null;
-};
+export type PersonalDetails = OnboardingApplicationData["personalDetails"];
 export type ContactName = Pick<
   PersonName,
   "firstName" | "middleName" | "lastName"
@@ -35,18 +30,7 @@ export type EmergencyContact =
 export type ReferenceContact = NonNullable<
   OnboardingApplicationData["reference"]
 >;
-export type WorkAuthorizationType = NonNullable<
-  OnboardingApplicationData["workAuthorization"]["type"]
->;
-
-export type WorkAuthorization = {
-  isUsCitizenOrPermanentResident: boolean | null;
-  residentOrCitizenType: "green_card" | "citizen" | null;
-  type: WorkAuthorizationType | null;
-  otherType: string;
-  startDate: string;
-  endDate: string;
-};
+export type WorkAuthorization = OnboardingApplicationData["workAuthorization"];
 
 export type OnboardingFormData = {
   name: PersonName;

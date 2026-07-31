@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 
 import { OnboardingForm } from "@/features/onboarding/OnboardingForm";
 import { SubmittedOnboarding } from "@/features/onboarding/SubmittedOnboarding";
-import { trpc } from "@/lib/trpc";
+import { authMeQueryOptions, trpc } from "@/lib/trpc";
 
 export default function EmployeeOnboarding() {
   const location = useLocation();
@@ -12,6 +12,7 @@ export default function EmployeeOnboarding() {
   const [showRegistrationComplete] = useState(
     location.state?.registrationComplete === true,
   );
+  const sessionQuery = useQuery(authMeQueryOptions());
   const applicationQuery = useQuery(trpc.onboarding.getMine.queryOptions());
 
   useEffect(() => {
@@ -113,6 +114,7 @@ export default function EmployeeOnboarding() {
         application={
           application?.status === "rejected" ? application : undefined
         }
+        email={sessionQuery.data?.email ?? ""}
         isRejected={isRejected}
       />
     </section>

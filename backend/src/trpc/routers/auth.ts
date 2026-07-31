@@ -65,7 +65,12 @@ export const authRouter = router({
       ctx.req.session.userId = String(user._id);
       ctx.req.session.role = "employee";
 
-      return { id: String(user._id), username: user.username, role: user.role };
+      return {
+        id: String(user._id),
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      };
     }),
 
   // Verify credentials and store identity in the session.
@@ -84,7 +89,12 @@ export const authRouter = router({
       ctx.req.session.userId = String(user._id);
       ctx.req.session.role = user.role as "employee" | "hr";
 
-      return { id: String(user._id), username: user.username, role: user.role };
+      return {
+        id: String(user._id),
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      };
     }),
 
   // Destroy the session.
@@ -105,6 +115,11 @@ export const authRouter = router({
       if (!ctx.userId) return null;
       const user = await UserModel.findById(ctx.userId).lean();
       if (!user) return null;
-      return { id: String(user._id), username: user.username, role: user.role };
+      return {
+        id: String(user._id),
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      };
     }),
 });
