@@ -76,6 +76,9 @@ function AppLayout() {
                 <NavLink className={navLinkClass} to="/hr/hiring">
                   Hiring management
                 </NavLink>
+                <NavLink className={navLinkClass} to="/hr/employees">
+                  Employee profiles
+                </NavLink>
                 <NavLink className={navLinkClass} to="/hr/visa-status">
                   Visa status
                 </NavLink>

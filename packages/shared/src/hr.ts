@@ -27,8 +27,10 @@ export const employeeListSchema = z.object({
 });
 
 export const visaProgressItemSchema = z.object({
-  userId: z.string(),
+  userId: z.string().nullable(),
+  invitationId: z.string().nullable(),
   fullName: z.string(),
+  email: z.email(),
   workAuthorization: workAuthorizationViewSchema,
   daysRemaining: z.number().int().nullable(),
   nextStep: z.string(),
@@ -45,6 +47,7 @@ export const visaAllItemSchema = z.object({
   fullName: z.string(),
   workAuthorization: workAuthorizationViewSchema,
   daysRemaining: z.number().int().nullable(),
+  nextStep: z.string(),
   approvedDocuments: z.array(
     z.object({
       step: z.enum(["optReceipt", "optEad", "i983", "i20"]),
@@ -54,10 +57,18 @@ export const visaAllItemSchema = z.object({
   ),
 });
 
-export const sendNotificationInputSchema = z.object({
-  userId: z.string().min(1),
-  message: z.string().optional(),
-});
+export const sendNotificationInputSchema = z.discriminatedUnion("target", [
+  z.object({
+    target: z.literal("employee"),
+    userId: z.string().min(1),
+    message: z.string().optional(),
+  }),
+  z.object({
+    target: z.literal("invitation"),
+    invitationId: z.string().min(1),
+    message: z.string().optional(),
+  }),
+]);
 
 export const sendNotificationOutputSchema = z.object({
   ok: z.literal(true),

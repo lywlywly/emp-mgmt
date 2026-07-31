@@ -9,12 +9,14 @@ export function ProfileField({
   defaultValue,
   type = "text",
   required = false,
+  disabled = false,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   type?: "date" | "email" | "text";
   required?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <label className="text-sm font-medium">
@@ -23,6 +25,7 @@ export function ProfileField({
       <Input
         className="mt-1"
         defaultValue={defaultValue}
+        disabled={disabled}
         name={name}
         required={required}
         type={type}
@@ -37,6 +40,7 @@ export function ProfileSection({
   onCancel,
   onEdit,
   onSubmit,
+  pending = false,
   children,
 }: {
   title: string;
@@ -44,23 +48,40 @@ export function ProfileSection({
   onCancel: () => void;
   onEdit: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  pending?: boolean;
   children: ReactNode;
 }) {
   return (
     <section className="rounded-lg border bg-card p-5 text-card-foreground sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="font-semibold">{title}</h2>
-        {editing ? (
-          <Button onClick={onCancel} size="sm" type="button" variant="outline">
-            Cancel
-          </Button>
-        ) : (
-          <Button onClick={onEdit} size="sm" type="button" variant="outline">
-            Edit
-          </Button>
-        )}
-      </div>
-      {editing ? <form onSubmit={onSubmit}>{children}</form> : children}
+      {editing ? (
+        <form onSubmit={onSubmit}>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="font-semibold">{title}</h2>
+            <div className="flex gap-2">
+              <Button
+                onClick={onCancel}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <SaveButton pending={pending} />
+            </div>
+          </div>
+          {children}
+        </form>
+      ) : (
+        <>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="font-semibold">{title}</h2>
+            <Button onClick={onEdit} size="sm" type="button" variant="outline">
+              Edit
+            </Button>
+          </div>
+          {children}
+        </>
+      )}
     </section>
   );
 }

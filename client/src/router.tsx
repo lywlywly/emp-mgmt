@@ -9,6 +9,8 @@ const EmployeeOnboarding = lazy(() => import("@/pages/EmployeeOnboarding"));
 const EmployeeProfile = lazy(() => import("@/pages/EmployeeProfile"));
 const EmployeeVisaStatus = lazy(() => import("@/pages/EmployeeVisaStatus"));
 const HrDashboard = lazy(() => import("@/pages/HrDashboard"));
+const HrEmployeeProfile = lazy(() => import("@/pages/HrEmployeeProfile"));
+const HrEmployeeProfiles = lazy(() => import("@/pages/HrEmployeeProfiles"));
 const HrHiringManagement = lazy(() => import("@/pages/HrHiringManagement"));
 const HrVisaStatus = lazy(() => import("@/pages/HrVisaStatus"));
 const Login = lazy(() => import("@/pages/Login"));
@@ -82,6 +84,8 @@ export function AppRoutes() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/hr" element={<HrDashboard />} />
+          <Route path="/hr/employees" element={<HrEmployeeProfiles />} />
+          <Route path="/hr/employees/:userId" element={<HrEmployeeProfile />} />
           <Route path="/hr/hiring" element={<HrHiringManagement />} />
           <Route path="/hr/visa-status" element={<HrVisaStatus />} />
           <Route path="/hr/invitations" element={<HrInvitations />} />

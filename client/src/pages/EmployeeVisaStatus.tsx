@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { CircleCheck } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,9 @@ export default function EmployeeVisaStatus() {
   }
 
   const { steps: stepData } = workflow.data;
+  const isComplete = steps.every(
+    (step) => stepData[step].status === "approved",
+  );
   let previousStepsApproved = true;
 
   return (
@@ -75,9 +79,16 @@ export default function EmployeeVisaStatus() {
       <div>
         <p className="text-sm font-medium text-primary">Employee portal</p>
         <h1 className="mt-2 text-4xl font-bold tracking-tight">Visa status</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Complete each OPT document after HR approves the preceding step.
-        </p>
+        {isComplete ? (
+          <p className="mt-2 flex items-center gap-2 text-lg text-emerald-700">
+            <CircleCheck aria-hidden="true" className="size-5" />
+            Your OPT documentation is complete and has been approved by HR.
+          </p>
+        ) : (
+          <p className="mt-2 text-lg text-muted-foreground">
+            Complete each OPT document after HR approves the preceding step.
+          </p>
+        )}
       </div>
       <div className="space-y-3">
         {steps.map((step) => {
