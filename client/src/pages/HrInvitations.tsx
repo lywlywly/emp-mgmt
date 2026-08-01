@@ -48,17 +48,23 @@ export default function HrInvitations() {
         <p className="text-sm text-destructive">{create.error.message}</p>
       )}
       <div className="rounded-lg border bg-card">
-        {invitations.data?.map((invitation) => (
-          <div className="border-b p-4 last:border-0" key={invitation.id}>
-            <p className="font-medium">{invitation.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {invitation.email} · {invitation.status}
-            </p>
-            <code className="mt-2 block break-all text-xs">
-              {invitation.link}
-            </code>
-          </div>
-        ))}
+        {invitations.data?.length ? (
+          invitations.data.map((invitation) => (
+            <div className="border-b p-4 last:border-0" key={invitation.id}>
+              <p className="font-medium">{invitation.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {invitation.email} · {invitation.status}
+              </p>
+              <code className="mt-2 block break-all text-xs">
+                {invitation.link}
+              </code>
+            </div>
+          ))
+        ) : (
+          <p className="p-4 text-sm text-muted-foreground">
+            Invitation history will appear here after you send an invitation.
+          </p>
+        )}
       </div>
     </section>
   );

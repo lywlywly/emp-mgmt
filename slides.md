@@ -131,6 +131,21 @@ Frontend reuses shared field rules in React Hook Form and infers matching TypeSc
 
 Owns routes, cached server state, in-progress form state, local previews, and image cropping.
 
+TanStack Query caches tRPC server data and refreshes affected views after mutations.
+
+---
+
+# Frontend: TanStack Query cache
+
+| Query | Freshness | Update strategy |
+| --- | --- | --- |
+| `auth.me` | fresh indefinitely | set/invalidate after login, registration, and logout |
+| Other tRPC queries | stale immediately | refetch on mount, focus, reconnect, or invalidation |
+
+- Inactive query results remain cached for 5 minutes.
+- Regular stale queries automatically refetch on component mount and window focus.
+- Mutation success invalidates affected query keys; active screens refetch immediately.
+
 ---
 
 # Frontend: file structure

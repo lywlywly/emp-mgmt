@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { fileDownloadUrl, filePreviewUrl } from "@/lib/files";
 import { queryClient, trpc } from "@/lib/trpc";
 
+const optStepLabels = {
+  optReceipt: "OPT receipt",
+  optEad: "OPT EAD",
+  i983: "I-983",
+  i20: "I-20",
+} as const;
+
 function date(value: string | null) {
   return value ? value.slice(0, 10) : "Not provided yet";
 }
@@ -119,6 +126,7 @@ export default function HrVisaStatus() {
               const rowId = workflow.userId ?? workflow.invitationId!;
               const optStep =
                 workflow.step === "application" ? null : workflow.step;
+              const optStepLabel = optStep ? optStepLabels[optStep] : null;
               const reviewable =
                 workflow.waitingOn === "hr" &&
                 Boolean(optStep) &&
@@ -191,7 +199,7 @@ export default function HrVisaStatus() {
                           }
                           type="button"
                         >
-                          Approve {optStep}
+                          Approve {optStepLabel}
                         </Button>
                         {showRejection ? (
                           <>
@@ -208,7 +216,7 @@ export default function HrVisaStatus() {
                               type="button"
                               variant="destructive"
                             >
-                              Reject {optStep}
+                              Reject {optStepLabel}
                             </Button>
                             <Button
                               onClick={() => {

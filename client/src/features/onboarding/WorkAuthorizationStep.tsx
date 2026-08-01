@@ -25,6 +25,14 @@ const residentOrCitizenLabels = {
   citizen: "Citizen",
 } as const;
 
+const workAuthorizationLabels = {
+  h1b: "H-1B",
+  l2: "L-2",
+  f1: "F-1 (CPT/OPT)",
+  h4: "H-4",
+  other: "Other",
+} as const;
+
 export function WorkAuthorizationStep() {
   const form = useFormContext<OnboardingFormData>();
   const workAuthorization = useWatch({
@@ -162,7 +170,11 @@ export function WorkAuthorizationStep() {
                   value={field.value ?? null}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue placeholder="Select a type">
+                      {field.value
+                        ? workAuthorizationLabels[field.value]
+                        : null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger={false}>
                     <SelectItem value="h1b">H-1B</SelectItem>
